@@ -7,8 +7,8 @@
 // Watcom C 10.0+ specific code... Change file commands for other compilers
 
 //
-//Amiga version compiled by Andrew Barker - andrew.barker@sunderland.ac.uk
-//Compile: sc link uchar math=ieee TZX2TAP.c
+// Ported to ZX Spectrum Next (NextZXOS) by Chris Young 2020 
+//
 //
 
 #define O_BINARY 0
@@ -29,11 +29,12 @@ unsigned char fhi,fho;
 uint32_t flen;
 char *mem;
 char buf[256];
-long pos;
+uint32_t pos, p;
 long len;
 long block;
 long longer,custom,only,dataonly,direct,not_rec;
 char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
+uint32_t start;
 
 long Get2(char *mem) { return(mem[0]+(mem[1]*256)); }
 long Get3(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)); }
@@ -42,7 +43,8 @@ long Get4(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)+(mem[3]*256*2
 uint32_t FileLength(unsigned char fh);
 void Error(char *errstr);
 void ChangeFileExtension(char *str,char *ext);
-
+uint32_t read_file(unsigned char fh, char *mem, uint32_t seek);
+void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len);
 
 int main(int argc, char *argv[])
 {
@@ -57,7 +59,7 @@ int main(int argc, char *argv[])
   if(argc==2) 
     {  
     strcpy(buf,argv[1]); 
-    ChangeFileExtension(buf,"TAP"); 
+    ChangeFileExtension(buf,"tap"); 
     }
   else      
     strcpy(buf,argv[2]);
@@ -73,7 +75,7 @@ int main(int argc, char *argv[])
     Error("unable to create output file");
 
   flen=FileLength(fhi);
-  mem=(char *) malloc(flen);
+  mem=(char *) malloc(100);
 
   if(mem==NULL) 
    Error("Not enough memory to load input file!");
@@ -97,66 +99,103 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     printf("\n-- Warning: Some of the data might not be properly recognised!\n");
 
-  esx_f_read(fhi,mem,flen-10);
   pos=block=longer=custom=only=dataonly=direct=not_rec=0;
+
+  /* read 100 bytes */
+  start = read_file(fhi, mem, 0);
+  start = 0; /* pos is always off by ten */
 
   while(pos<flen-10)
     {
     pos++;
-    switch(mem[pos-1])
+    p = pos - start;
+
+    printf("block %x\n", mem[p-1]);
+
+    switch(mem[p-1])
       {
-      case 0x10: len=Get2(&mem[pos+0x02]);
-                 esx_f_write(fho,&mem[pos+0x02],2); 
-                 esx_f_write(fho,&mem[pos+0x04],len);
+      case 0x10: len=Get2(&mem[p+0x02]);
+                 convert_data(fhi, fho, pos+0x02, 2);
+                 convert_data(fhi, fho, pos+0x04, len);
+
                  pos+=len+0x04;
+                 start = read_file(fhi, mem, pos);
                  block++;
                  break;
-      case 0x11: len=Get3(&mem[pos+0x0F]);
+      case 0x11: len=Get3(&mem[p+0x0F]);
                  if(len<65536)
                    {
-                   esx_f_write(fho,&mem[pos+0x0F],2);
-                   esx_f_write(fho,&mem[pos+0x12],len);
+                   convert_data(fhi, fho, pos+0x0F, 2);
+                   convert_data(fhi, fho, pos+0x12, len);
                    block++;
                    }
                  else 
                    longer=1;
                  custom=1;
                  pos+=len+0x12;
+                 start = read_file(fhi, mem, pos);
                  break;
       case 0x12: only=1;
                  pos+=0x04;
+                 start = read_file(fhi, mem, pos);
                  break;
       case 0x13: only=1;
-                 pos+=(mem[pos+0x00]*0x02)+0x01;
+                 pos+=(mem[p+0x00]*0x02)+0x01;
+                 start = read_file(fhi, mem, pos);
                  break;
-      case 0x14: len=Get3(&mem[pos+0x07]);
+      case 0x14: len=Get3(&mem[p+0x07]);
                  if(len<65536)
                    {
-                   esx_f_write(fho,&mem[pos+0x07],2);
-                   esx_f_write(fho,&mem[pos+0x0A],len);
+                   convert_data(fhi, fho, pos+0x07, 2);
+                   convert_data(fhi, fho, pos+0x0A, len);
                    block++;
                    }
                  else 
                    longer=1;
                  dataonly=1;
                  pos+=len+0x0A;
+                 start = read_file(fhi, mem, pos);
                  break;
       case 0x15: direct=1;
-                 pos+=Get3(&mem[pos+0x05])+0x08;
+                 pos+=Get3(&mem[p+0x05])+0x08;
+                 start = read_file(fhi, mem, pos);
                  break;
-      case 0x20: pos+=0x02; break;
-      case 0x21: pos+=mem[pos+0x00]+0x01; break;
+      case 0x20: pos+=0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x21: pos+=mem[p+0x00]+0x01;
+                 start = read_file(fhi, mem, pos);
+                 break;
       case 0x22: break;
-      case 0x23: pos+=0x02; break;
-      case 0x30: pos+=mem[pos+0x00]+0x01; break;
-      case 0x31: pos+=mem[pos+0x01]+0x02; break;
-      case 0x32: pos+=Get2(&mem[pos+0x00])+0x02; break;
-      case 0x33: pos+=(mem[pos+0x00]*0x03)+0x01; break;
-      case 0x34: pos+=0x08; break;
-      case 0x35: pos+=Get4(&mem[pos+0x10])+0x14; break;
-      case 0x40: pos+=Get3(&mem[pos+0x08])+0x0B; break;
-      case 0x5A: pos+=0x09; break;
-      default:   pos+=Get4(&mem[pos+0x00]+0x04);
+      case 0x23: pos+=0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x30: pos+=mem[p+0x00]+0x01;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x31: pos+=mem[p+0x01]+0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x32: pos+=Get2(&mem[p+0x00])+0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x33: pos+=(mem[p+0x00]*0x03)+0x01;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x34: pos+=0x08;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x35: pos+=Get4(&mem[p+0x10])+0x14;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x40: pos+=Get3(&mem[p+0x08])+0x0B;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x5A: pos+=0x09;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      default:   pos+=Get4(&mem[p+0x00]+0x04);
+                 start = read_file(fhi, mem, pos);
                  not_rec=1;
       }
     }
@@ -207,7 +246,6 @@ void ChangeFileExtension(char *str,char *ext)
 // Determine length of file
 uint32_t FileLength(unsigned char fh)
 {
-  long curpos, size;
   struct esx_stat es;
   
   if(esx_f_fstat(fh, (struct esx_stat *)&es)) {
@@ -215,6 +253,43 @@ uint32_t FileLength(unsigned char fh)
     return 0;
   }
   return(es.size);
+}
+
+uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
+{
+  uint32_t posn = seek;
+  esx_f_seek(fh, 10 + posn, ESX_SEEK_SET);
+  esx_f_read(fh, mem, 100);
+  return posn;
+}
+
+void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len)
+{
+  char *buf;
+  uint32_t bytes_read = 0;
+  uint32_t bytes_to_read = 0;
+
+  buf=(char *) malloc(1024);
+
+  if(buf==NULL) 
+    Error("Not enough memory to convert");
+
+  esx_f_seek(fhi, 10 + posn, ESX_SEEK_SET);
+
+  while(bytes_read < len) {
+    if((len - bytes_read) <= 1024) {
+      bytes_to_read = (len - bytes_read);
+    } else {
+      bytes_to_read = 1024;
+    }
+
+    esx_f_read(fhi, buf, bytes_to_read);
+    esx_f_write(fho, buf, bytes_to_read); 
+
+    bytes_read += bytes_to_read;
+  }
+
+  free(buf);
 }
 
 // exits with an error message *errstr
