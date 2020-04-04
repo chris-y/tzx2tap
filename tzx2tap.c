@@ -49,7 +49,7 @@ void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t 
 int main(int argc, char *argv[])
 {
   printf("\nZXTape Utilities\nTZX to TAP Converter v0.13b\n");
-
+  printf("NextZXOS ver by Chris Young\ngithub.com/chris-y/tzx2tap\n");
   if(argc<2|| argc>3)
     {
     printf("\nUsage: TZX2TAP INPUT.TZX [OUTPUT.TAP]\n");
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
   start = read_file(fhi, mem, 0);
   start = 0; /* pos is always off by ten */
 
-  printf("Converting...");
+  printf("\nConverting...");
 
   while(pos<flen-10)
     {
