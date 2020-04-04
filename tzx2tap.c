@@ -94,10 +94,10 @@ int main(int argc, char *argv[])
     Error("Development versions of ZXTape format are not supported!");
 
   if(mem[8]>MAJREV) 
-    printf("\n-- Warning: Some blocks may not be recognised and used!\n");
+    printf("\nWarning: Some blocks may not be recognised and used!\n");
 
   if(mem[8]==MAJREV && mem[9]>MINREV) 
-    printf("\n-- Warning: Some of the data might not be properly recognised!\n");
+    printf("\nWarning: Some of the data might not be properly recognised!\n");
 
   pos=block=longer=custom=only=dataonly=direct=not_rec=0;
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
   if(not_rec) 
     printf("-- Warning: Some blocks were NOT recognised !\n");
 
-  printf("Succesfully converted %d blocks!\n",block);
+  printf("Succesfully converted %d blocks\n",block);
   esx_f_close(fhi);
   esx_f_close(fho);
   free(mem);
