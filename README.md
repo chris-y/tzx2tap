@@ -1,3 +1,10 @@
+This is a version of TZX2TAP converted and built for the ZX Spectrum Next
+(NextZXOS) by Chris Young 2020.
+
+Original readme follows...
+
+
+
 
                              ZXTape Utilities
                            --------------------
