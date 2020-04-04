@@ -1,3 +1,4 @@
+#pragma output CLIB_MALLOC_HEAP_SIZE = -1
 ///////////////////////////////////////////////////////////////////////////////
 // TZX to TAP converter
 //                                                                       v0.13b
@@ -16,28 +17,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
+#include <arch/zxn.h>
+#include <arch/zxn/esxdos.h>
 
 #define MAJREV 1         // Major revision of the format this program supports
 #define MINREV 03        // Minor revision -||-
 
-int fhi,fho,flen;
+unsigned char fhi,fho;
+uint32_t flen;
 char *mem;
 char buf[256];
-int pos;
-int len;
-int block;
-int longer,custom,only,dataonly,direct,not_rec;
+long pos;
+long len;
+long block;
+long longer,custom,only,dataonly,direct,not_rec;
 char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
 
-int Get2(char *mem) { return(mem[0]+(mem[1]*256)); }
-int Get3(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)); }
-int Get4(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)+(mem[3]*256*256*256)); }
+long Get2(char *mem) { return(mem[0]+(mem[1]*256)); }
+long Get3(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)); }
+long Get4(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)+(mem[3]*256*256*256)); }
 
-int  FileLength(int fh);
+uint32_t FileLength(unsigned char fh);
 void Error(char *errstr);
 void ChangeFileExtension(char *str,char *ext);
 
@@ -60,19 +62,23 @@ int main(int argc, char *argv[])
   else      
     strcpy(buf,argv[2]);
 
-  fhi=open(argv[1],O_RDONLY | O_BINARY);
+  fhi = esx_f_open(argv[1], ESX_MODE_READ);
 
-  if(fhi==-1) 
+  if(fhi==0) 
     Error("Input file not found!");
 
-  fho=open(buf,O_WRONLY | O_BINARY | O_CREAT | O_TRUNC);
+  fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
+
+  if(fho==0)
+    Error("unable to create output file");
+
   flen=FileLength(fhi);
   mem=(char *) malloc(flen);
 
   if(mem==NULL) 
    Error("Not enough memory to load input file!");
 
-  read(fhi,mem,10); mem[7]=0;
+  esx_f_read(fhi,mem,10); mem[7]=0;
 
   if(strcmp(mem,"ZXTape!")) 
     { 
@@ -91,7 +97,7 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     printf("\n-- Warning: Some of the data might not be properly recognised!\n");
 
-  read(fhi,mem,flen-10);
+  esx_f_read(fhi,mem,flen-10);
   pos=block=longer=custom=only=dataonly=direct=not_rec=0;
 
   while(pos<flen-10)
@@ -100,16 +106,16 @@ int main(int argc, char *argv[])
     switch(mem[pos-1])
       {
       case 0x10: len=Get2(&mem[pos+0x02]);
-                 write(fho,&mem[pos+0x02],2); 
-                 write(fho,&mem[pos+0x04],len);
+                 esx_f_write(fho,&mem[pos+0x02],2); 
+                 esx_f_write(fho,&mem[pos+0x04],len);
                  pos+=len+0x04;
                  block++;
                  break;
       case 0x11: len=Get3(&mem[pos+0x0F]);
                  if(len<65536)
                    {
-                   write(fho,&mem[pos+0x0F],2);
-                   write(fho,&mem[pos+0x12],len);
+                   esx_f_write(fho,&mem[pos+0x0F],2);
+                   esx_f_write(fho,&mem[pos+0x12],len);
                    block++;
                    }
                  else 
@@ -126,8 +132,8 @@ int main(int argc, char *argv[])
       case 0x14: len=Get3(&mem[pos+0x07]);
                  if(len<65536)
                    {
-                   write(fho,&mem[pos+0x07],2);
-                   write(fho,&mem[pos+0x0A],len);
+                   esx_f_write(fho,&mem[pos+0x07],2);
+                   esx_f_write(fho,&mem[pos+0x0A],len);
                    block++;
                    }
                  else 
@@ -176,9 +182,11 @@ int main(int argc, char *argv[])
     printf("-- Warning: Some blocks were NOT recognised !\n");
 
   printf("Succesfully converted %d blocks!\n",block);
-  close(fhi);
-  close(fho);
+  esx_f_close(fhi);
+  esx_f_close(fho);
   free(mem);
+
+  return 0;
 }
 
 // Changes the File Extension of String *str to *ext
@@ -197,14 +205,16 @@ void ChangeFileExtension(char *str,char *ext)
 }
 
 // Determine length of file
-int FileLength(int fh)
+uint32_t FileLength(unsigned char fh)
 {
-  int curpos, size;
+  long curpos, size;
+  struct esx_stat es;
   
-  curpos = lseek(fh, 0, SEEK_CUR);
-  size = lseek(fh, 0, SEEK_END);
-  lseek(fh, curpos, SEEK_SET);
-  return(size);
+  if(esx_f_fstat(fh, (struct esx_stat *)&es)) {
+    Error("unable to stat file");
+    return 0;
+  }
+  return(es.size);
 }
 
 // exits with an error message *errstr
