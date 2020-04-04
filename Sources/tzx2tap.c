@@ -30,15 +30,15 @@ uint32_t flen;
 char *mem;
 char buf[256];
 uint32_t pos, p;
-long len;
+uint32_t len;
 long block;
 long longer,custom,only,dataonly,direct,not_rec;
 char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
 uint32_t start;
 
-long Get2(char *mem) { return(mem[0]+(mem[1]*256)); }
-long Get3(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)); }
-long Get4(char *mem) { return(mem[0]+(mem[1]*256)+(mem[2]*256*256)+(mem[3]*256*256*256)); }
+uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
+uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
+uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
 
 uint32_t FileLength(unsigned char fh);
 void Error(char *errstr);
@@ -48,7 +48,7 @@ void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t 
 
 int main(int argc, char *argv[])
 {
-  printf("\nZXTape Utilities - TZX to TAP Converter v0.13b\n");
+  printf("\nZXTape Utilities\nTZX to TAP Converter v0.13b\n");
 
   if(argc<2|| argc>3)
     {
@@ -66,12 +66,12 @@ int main(int argc, char *argv[])
 
   fhi = esx_f_open(argv[1], ESX_MODE_READ);
 
-  if(fhi==0) 
+  if(fhi==255) 
     Error("Input file not found!");
 
   fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
 
-  if(fho==0)
+  if(fho==255)
     Error("unable to create output file");
 
   flen=FileLength(fhi);
@@ -105,12 +105,14 @@ int main(int argc, char *argv[])
   start = read_file(fhi, mem, 0);
   start = 0; /* pos is always off by ten */
 
+  printf("Converting...");
+
   while(pos<flen-10)
     {
     pos++;
     p = pos - start;
 
-    printf("block %x\n", mem[p-1]);
+    printf(".");
 
     switch(mem[p-1])
       {
@@ -200,7 +202,7 @@ int main(int argc, char *argv[])
       }
     }
 
-  printf("\n");
+  printf("\n\n");
 
   if(custom) 
     printf("-- Warning: Custom Loading blocks were converted!\n");
