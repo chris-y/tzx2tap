@@ -3,7 +3,7 @@ This is a version of TZX2TAP converted and built for the ZX Spectrum Next
 
 To install, copy TZX2TAP to c:/dot
 In c:/nextzxos/browser.cfg, modify the TZX line to be:
-    TZX:cls:.tzx2tap "|"
+    TZX<cls:.tzx2tap "|"
 This will mean selecting a TZX file in the browser will convert the file.
 The resulting TAP will then be available to open as usual.
 
