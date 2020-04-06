@@ -25,17 +25,6 @@
 #define MAJREV 1         // Major revision of the format this program supports
 #define MINREV 20        // Minor revision -||-
 
-unsigned char fhi,fho;
-uint32_t flen;
-char *mem;
-char buf[256];
-uint32_t pos, p;
-uint32_t len;
-long block;
-int longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
-char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
-uint32_t start;
-
 uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
 uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
 uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
@@ -48,6 +37,16 @@ void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t 
 
 int main(int argc, char *argv[])
 {
+  unsigned char fhi,fho;
+  uint32_t flen;
+  char *mem;
+  char buf[256];
+  uint32_t pos, p;
+  uint32_t len;
+  long block;
+  int longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
+  char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
+  uint32_t start;
   long loop_start = 0;
   int loop_count = 0;
 
