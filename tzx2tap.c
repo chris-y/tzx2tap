@@ -122,11 +122,11 @@ int main(int argc, char *argv[])
   long loop_start = 0;
   int loop_count = 0;
 
-  printf("\nZXTape Utilities\nTZX to TAP Converter v0.13b\n");
-  printf("NextZXOS ver by Chris Young\ngithub.com/chris-y/tzx2tap\n");
+  printf("TZX2TAP for NextZXOS v1.1\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n");
+  printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
   if(argc<2|| argc>3)
     {
-    printf("\nUsage: TZX2TAP INPUT.TZX [OUTPUT.TAP]\n");
+    printf("\nUsage: .TZX2TAP IN.TZX [OUT.TAP]\n");
     exit(0);
     }
 
@@ -144,37 +144,37 @@ int main(int argc, char *argv[])
   fhi = esx_f_open(argv[1], ESX_MODE_READ);
 
   if(fhi==255) 
-    Error("Input file not found!");
+    Error("Input file not found");
 
   fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
 
   if(fho==255)
-    Error("unable to create output file");
+    Error("Cannot create output file");
 
   flen=FileLength(fhi);
   mem=(char *) malloc(MAX_HEADER_SIZE);
 
   if(mem==NULL) 
-   Error("Not enough memory to load input file!");
+   Error("Not enough memory");
 
   esx_f_read(fhi,mem,10); mem[7]=0;
 
   if(strcmp(mem,"ZXTape!")) 
     { 
-    free(mem); 
-    Error("File is not in ZXTape format!"); 
+    free(mem);
+    Error("Input is not TZX format"); 
     }
 
   printf("\nZXTape file revision %d.%02d\n",mem[8],mem[9]);
 
   if(!mem[8]) 
-    Error("Development versions of ZXTape format are not supported!");
+    Error("\nTZX dev ver not supported");
 
   if(mem[8]>MAJREV) 
-    printf("\nWarning: Some blocks may not be recognised and used!\n");
+    printf("\nWarning: Some blocks may not be recognised and used\n");
 
   if(mem[8]==MAJREV && mem[9]>MINREV) 
-    printf("\nWarning: Some of the data might not be properly recognised!\n");
+    printf("\nWarning: Some of the data might not be properly recognised\n");
 
   pos=block=0;
   longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
@@ -325,33 +325,33 @@ int main(int argc, char *argv[])
   printf("\n\n");
 
   if(custom) 
-    printf("-- Warning: Custom Loading blocks were converted!\n");
+    printf("Warning: Custom Loading blocks  were converted\n\n");
 
   if(longer) 
-    printf("-- Warning: Over 64k long Custom Loading blocks were *not* converted!\n");
+    printf("Warning: Over 64k long Custom   Loading blocks were not converted\n\n");
 
   if(only) 
-    printf("-- Warning: Some Pure Tone and/or Sequence of Pulses blocks encountered!\n");
+    printf("Warning: Sequence of Pulses and/or Pure Tone blocks encountered\n\n");
 
   if(dataonly) 
-    printf("-- Warning: Data Only blocks were converted!\n");
+    printf("Warning: Data Only blocks were  converted\n\n");
 
   if(direct) 
-    printf("-- Warning: Direct Recording blocks were encountered!\n");
+    printf("Warning: Direct Recording blockswere encountered\n\n");
 
   if(call_seq) 
-    printf("-- Warning: Call sequence blocks were encountered!\n");
+    printf("Warning: Call sequence blocks   were encountered\n\n");
 
   if(deprecated) 
-    printf("-- Warning: Deprecated blocks were encountered!\n");
+    printf("Warning: Deprecated blocks were encountered\n\n");
 
   if(snap)
-    printf("Note: Embedded snapshot not extracted\n");
+    printf("Note: Embedded snapshot(s) not  extracted\n\n");
 
   if(not_rec) 
-    printf("-- Warning: Some blocks were NOT recognised !\n");
+    printf("Warning: Some blocks were NOT   recognised\n\n");
 
-  printf("Succesfully converted %d blocks\n",block);
+  printf("Converted %d blocks\n",block);
   esx_f_close(fhi);
   esx_f_close(fho);
   free(mem);
