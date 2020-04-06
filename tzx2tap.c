@@ -32,7 +32,7 @@ char buf[256];
 uint32_t pos, p;
 uint32_t len;
 long block;
-int longer,custom,only,dataonly,direct,not_rec,snap;
+int longer,custom,only,dataonly,direct,not_rec,snap,call_seq;
 char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
 uint32_t start;
 
@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
 {
   long loop_start = 0;
   int loop_count = 0;
-
 
   printf("\nZXTape Utilities\nTZX to TAP Converter v0.13b\n");
   printf("NextZXOS ver by Chris Young\ngithub.com/chris-y/tzx2tap\n");
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     printf("\nWarning: Some of the data might not be properly recognised!\n");
 
-  pos=block=longer=custom=only=dataonly=direct=not_rec=snap=0;
+  pos=block=longer=custom=only=dataonly=direct=not_rec=snap=call_seq=0;
 
   /* read 100 bytes */
   start = read_file(fhi, mem, 0);
@@ -187,6 +186,12 @@ int main(int argc, char *argv[])
                  }
                  start = read_file(fhi, mem, pos);
                  break;
+      case 0x26: pos += (Get2(&mem[p+0x00])*2)+0x02;
+                 start = read_file(fhi, mem, pos);
+                 call_seq = 1;
+                 break;
+      case 0x27: call_seq = 1;
+                 break;
       case 0x30: pos+=mem[p+0x00]+0x01;
                  start = read_file(fhi, mem, pos);
                  break;
@@ -234,6 +239,9 @@ int main(int argc, char *argv[])
 
   if(direct) 
     printf("-- Warning: Direct Recording blocks were encountered!\n");
+
+  if(call_seq) 
+    printf("-- Warning: Call sequence blocks were encountered!\n");
 
   if(snap)
     printf("Note: Embedded snapshot not extracted\n");
