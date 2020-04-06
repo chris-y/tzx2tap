@@ -23,7 +23,7 @@
 #include <arch/zxn/esxdos.h>
 
 #define MAJREV 1         // Major revision of the format this program supports
-#define MINREV 03        // Minor revision -||-
+#define MINREV 10        // Minor revision -||-
 
 unsigned char fhi,fho;
 uint32_t flen;
