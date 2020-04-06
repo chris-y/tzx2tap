@@ -192,6 +192,9 @@ int main(int argc, char *argv[])
                  break;
       case 0x27: call_seq = 1;
                  break;
+      case 0x28: pos += Get2(&mem[p+0x00])+0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
       case 0x30: pos+=mem[p+0x00]+0x01;
                  start = read_file(fhi, mem, pos);
                  break;
