@@ -29,11 +29,76 @@ uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
 uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
 uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
 
-uint32_t FileLength(unsigned char fh);
-void Error(char *errstr);
-void ChangeFileExtension(char *str,char *ext);
-uint32_t read_file(unsigned char fh, char *mem, uint32_t seek);
-void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len);
+// exits with an error message *errstr
+void Error(char *errstr)
+{
+  printf("\n-- Error: %s\n",errstr);
+  exit(0);
+}
+
+// Changes the File Extension of String *str to *ext
+void ChangeFileExtension(char *str,char *ext)
+{
+  int n;
+  
+  n=strlen(str); 
+
+  while(str[n]!='.') 
+    n--;
+
+  n++; 
+  str[n]=0; 
+  strcat(str,ext);
+}
+
+// Determine length of file
+uint32_t FileLength(unsigned char fh)
+{
+  struct esx_stat es;
+  
+  if(esx_f_fstat(fh, (struct esx_stat *)&es)) {
+    Error("unable to stat file");
+    return 0;
+  }
+  return(es.size);
+}
+
+uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
+{
+  uint32_t posn = seek;
+  esx_f_seek(fh, 10 + posn, ESX_SEEK_SET);
+  esx_f_read(fh, mem, 100);
+  return posn;
+}
+
+void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len)
+{
+  char *buf;
+  uint32_t bytes_read = 0;
+  uint32_t bytes_to_read = 0;
+
+  buf=(char *) malloc(1024);
+
+  if(buf==NULL) 
+    Error("Not enough memory to convert");
+
+  esx_f_seek(fhi, 10 + posn, ESX_SEEK_SET);
+
+  while(bytes_read < len) {
+    if((len - bytes_read) <= 1024) {
+      bytes_to_read = (len - bytes_read);
+    } else {
+      bytes_to_read = 1024;
+    }
+
+    esx_f_read(fhi, buf, bytes_to_read);
+    esx_f_write(fho, buf, bytes_to_read); 
+
+    bytes_read += bytes_to_read;
+  }
+
+  free(buf);
+}
 
 int main(int argc, char *argv[])
 {
@@ -283,73 +348,3 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-// Changes the File Extension of String *str to *ext
-void ChangeFileExtension(char *str,char *ext)
-{
-  int n;
-  
-  n=strlen(str); 
-
-  while(str[n]!='.') 
-    n--;
-
-  n++; 
-  str[n]=0; 
-  strcat(str,ext);
-}
-
-// Determine length of file
-uint32_t FileLength(unsigned char fh)
-{
-  struct esx_stat es;
-  
-  if(esx_f_fstat(fh, (struct esx_stat *)&es)) {
-    Error("unable to stat file");
-    return 0;
-  }
-  return(es.size);
-}
-
-uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
-{
-  uint32_t posn = seek;
-  esx_f_seek(fh, 10 + posn, ESX_SEEK_SET);
-  esx_f_read(fh, mem, 100);
-  return posn;
-}
-
-void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len)
-{
-  char *buf;
-  uint32_t bytes_read = 0;
-  uint32_t bytes_to_read = 0;
-
-  buf=(char *) malloc(1024);
-
-  if(buf==NULL) 
-    Error("Not enough memory to convert");
-
-  esx_f_seek(fhi, 10 + posn, ESX_SEEK_SET);
-
-  while(bytes_read < len) {
-    if((len - bytes_read) <= 1024) {
-      bytes_to_read = (len - bytes_read);
-    } else {
-      bytes_to_read = 1024;
-    }
-
-    esx_f_read(fhi, buf, bytes_to_read);
-    esx_f_write(fho, buf, bytes_to_read); 
-
-    bytes_read += bytes_to_read;
-  }
-
-  free(buf);
-}
-
-// exits with an error message *errstr
-void Error(char *errstr)
-{
-  printf("\n-- Error: %s\n",errstr);
-  exit(0);
-}
