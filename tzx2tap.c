@@ -48,6 +48,10 @@ void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t 
 
 int main(int argc, char *argv[])
 {
+  long loop_start = 0;
+  int loop_count = 0;
+
+
   printf("\nZXTape Utilities\nTZX to TAP Converter v0.13b\n");
   printf("NextZXOS ver by Chris Young\ngithub.com/chris-y/tzx2tap\n");
   if(argc<2|| argc>3)
@@ -170,6 +174,17 @@ int main(int argc, char *argv[])
                  break;
       case 0x22: break;
       case 0x23: pos+=0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x24: pos+=0x02;
+                 loop_start=pos;
+                 loop_count=Get2(&mem[p+0x00]);
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x25: if(loop_count > 0) {
+                   pos = loop_start;
+                   loop_count--;
+                 }
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x30: pos+=mem[p+0x00]+0x01;
