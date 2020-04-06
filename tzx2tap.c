@@ -23,7 +23,7 @@
 #include <arch/zxn/esxdos.h>
 
 #define MAJREV 1         // Major revision of the format this program supports
-#define MINREV 13        // Minor revision -||-
+#define MINREV 20        // Minor revision -||-
 
 unsigned char fhi,fho;
 uint32_t flen;
@@ -32,7 +32,7 @@ char buf[256];
 uint32_t pos, p;
 uint32_t len;
 long block;
-int longer,custom,only,dataonly,direct,not_rec,snap,call_seq;
+int longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
 char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
 uint32_t start;
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     printf("\nWarning: Some of the data might not be properly recognised!\n");
 
-  pos=block=longer=custom=only=dataonly=direct=not_rec=snap=call_seq=0;
+  pos=block=longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=0;
 
   /* read 100 bytes */
   start = read_file(fhi, mem, 0);
@@ -167,9 +167,11 @@ int main(int argc, char *argv[])
                  break;
       case 0x16: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
+                 deprecated = 1;
                  break;
       case 0x17: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
+                 deprecated = 1;
                  break;
       case 0x18: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
@@ -226,12 +228,14 @@ int main(int argc, char *argv[])
                  break;
       case 0x34: pos+=0x08;
                  start = read_file(fhi, mem, pos);
+                 deprecated = 1;
                  break;
       case 0x35: pos+=Get4(&mem[p+0x10])+0x14;
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x40: pos+=Get3(&mem[p+0x01])+0x04;
                  snap = 1;
+                 deprecated = 1;
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x5A: pos+=0x09;
@@ -262,6 +266,9 @@ int main(int argc, char *argv[])
 
   if(call_seq) 
     printf("-- Warning: Call sequence blocks were encountered!\n");
+
+  if(deprecated) 
+    printf("-- Warning: Deprecated blocks were encountered!\n");
 
   if(snap)
     printf("Note: Embedded snapshot not extracted\n");
