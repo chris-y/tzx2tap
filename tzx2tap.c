@@ -25,19 +25,19 @@
 #define MAJREV 1         // Major revision of the format this program supports
 #define MINREV 20        // Minor revision -||-
 
-uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
-uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
-uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
+static uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
+static uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
+static uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
 
 // exits with an error message *errstr
-void Error(char *errstr)
+static void Error(char *errstr)
 {
   printf("\n-- Error: %s\n",errstr);
   exit(0);
 }
 
 // Changes the File Extension of String *str to *ext
-void ChangeFileExtension(char *str,char *ext)
+static void ChangeFileExtension(char *str,char *ext)
 {
   int n;
   
@@ -52,7 +52,7 @@ void ChangeFileExtension(char *str,char *ext)
 }
 
 // Determine length of file
-uint32_t FileLength(unsigned char fh)
+static uint32_t FileLength(unsigned char fh)
 {
   struct esx_stat es;
   
@@ -63,7 +63,7 @@ uint32_t FileLength(unsigned char fh)
   return(es.size);
 }
 
-uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
+static uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
 {
   uint32_t posn = seek;
   esx_f_seek(fh, 10 + posn, ESX_SEEK_SET);
@@ -71,7 +71,7 @@ uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
   return posn;
 }
 
-void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len)
+static void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len)
 {
   char *buf;
   uint32_t bytes_read = 0;
