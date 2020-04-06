@@ -1,6 +1,6 @@
 #pragma output CLIB_MALLOC_HEAP_SIZE = -1
 ///////////////////////////////////////////////////////////////////////////////
-// TZX2TAP for ZX Spectrum Next (NextZXOS) v1.1 by Chris Young 2020 
+// TZX2TAP for ZX Spectrum Next (NextZXOS) by Chris Young 2020 
 // Based on TZX to TAP converter v0.13b (c) 1997 Tomaz Kac
 //
 
@@ -13,6 +13,8 @@
 #include <arch/zxn.h>
 #include <arch/zxn/esxdos.h>
 #include <z80.h>
+
+#define PROGVER "1.2beta"
 
 #define MAX_HEADER_SIZE 0x14 // Size of largest block header
 #define MAJREV 1         // Major revision of the format this program supports
@@ -61,11 +63,10 @@ static uint32_t FileLength(unsigned char fh)
   return(es.size);
 }
 
-// read next header from input and return the position within the file (offset by 10)
-static uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
+// read next header from input and return the position within the file
+static uint32_t read_file(unsigned char fh, char *mem, uint32_t posn)
 {
-  uint32_t posn = seek;
-  esx_f_seek(fh, 10 + posn, ESX_SEEK_SET);
+  esx_f_seek(fh, posn, ESX_SEEK_SET);
   esx_f_read(fh, mem, MAX_HEADER_SIZE);
   return posn;
 }
@@ -82,7 +83,7 @@ static void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, ui
   if(buf==NULL) 
     Error("Not enough memory to convert");
 
-  esx_f_seek(fhi, 10 + posn, ESX_SEEK_SET);
+  esx_f_seek(fhi, posn, ESX_SEEK_SET);
 
   while(bytes_read < len) {
     if((len - bytes_read) <= 1024) {
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
   long loop_start = 0;
   int loop_count = 0;
 
-  printf("TZX2TAP for NextZXOS v1.1\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n");
+  printf("TZX2TAP for NextZXOS v%s\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n", PROGVER);
   printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
   if(argc<2|| argc>3)
     {
@@ -171,16 +172,16 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     printf("\nWarning: Some of the data might not be properly recognised\n");
 
-  pos=block=0;
+  pos = 10;
+  block=0;
   longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
 
   /* read next header bytes */
-  start = read_file(fhi, mem, 0);
-  start = 0; /* pos is always off by ten */
+  start = read_file(fhi, mem, 10);
 
   printf("\nConverting...");
 
-  while(pos<flen-10)
+  while(pos<flen)
     {
     pos++;
     p = pos - start;
