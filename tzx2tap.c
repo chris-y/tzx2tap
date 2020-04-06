@@ -1,14 +1,7 @@
 #pragma output CLIB_MALLOC_HEAP_SIZE = -1
 ///////////////////////////////////////////////////////////////////////////////
-// TZX to TAP converter
-//                                                                       v0.13b
-// (c) 1997 Tomaz Kac
-//
-// Watcom C 10.0+ specific code... Change file commands for other compilers
-
-//
-// Ported to ZX Spectrum Next (NextZXOS) by Chris Young 2020 
-//
+// TZX2TAP for ZX Spectrum Next (NextZXOS) v1.1 by Chris Young 2020 
+// Based on TZX to TAP converter v0.13b (c) 1997 Tomaz Kac
 //
 
 #include <stdbool.h>
