@@ -165,6 +165,12 @@ int main(int argc, char *argv[])
                  pos+=Get3(&mem[p+0x05])+0x08;
                  start = read_file(fhi, mem, pos);
                  break;
+      case 0x16: pos+=Get4(&mem[p+0x00]+0x04);
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x17: pos+=Get4(&mem[p+0x00]+0x04);
+                 start = read_file(fhi, mem, pos);
+                 break;
       case 0x20: pos+=0x02;
                  start = read_file(fhi, mem, pos);
                  break;
