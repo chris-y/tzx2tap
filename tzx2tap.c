@@ -25,6 +25,8 @@
 #define MAJREV 1         // Major revision of the format this program supports
 #define MINREV 20        // Minor revision -||-
 
+static unsigned char old_cpu_speed;
+
 static uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
 static uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
 static uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
@@ -33,6 +35,7 @@ static uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256
 static void Error(char *errstr)
 {
   printf("\n-- Error: %s\n",errstr);
+  ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
   exit(0);
 }
 
@@ -132,6 +135,9 @@ int main(int argc, char *argv[])
     }
   else      
     strcpy(buf,argv[2]);
+
+  old_cpu_speed = ZXN_READ_REG(REG_TURBO_MODE);
+  ZXN_NEXTREG(REG_TURBO_MODE, RTM_14MHZ);
 
   fhi = esx_f_open(argv[1], ESX_MODE_READ);
 
@@ -347,6 +353,8 @@ int main(int argc, char *argv[])
   esx_f_close(fhi);
   esx_f_close(fho);
   free(mem);
+
+  ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
 
   return 0;
 }
