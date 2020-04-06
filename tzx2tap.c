@@ -171,6 +171,14 @@ int main(int argc, char *argv[])
       case 0x17: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
                  break;
+      case 0x18: pos+=Get4(&mem[p+0x00]+0x04);
+                 start = read_file(fhi, mem, pos);
+                 only = 1;
+                 break;
+      case 0x19: pos+=Get4(&mem[p+0x00]+0x04);
+                 start = read_file(fhi, mem, pos);
+                 only = 1;
+                 break;
       case 0x20: pos+=0x02;
                  start = read_file(fhi, mem, pos);
                  break;
@@ -199,6 +207,9 @@ int main(int argc, char *argv[])
       case 0x27: call_seq = 1;
                  break;
       case 0x28: pos += Get2(&mem[p+0x00])+0x02;
+                 start = read_file(fhi, mem, pos);
+                 break;
+      case 0x2B: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x30: pos+=mem[p+0x00]+0x01;
