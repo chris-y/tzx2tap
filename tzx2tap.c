@@ -11,8 +11,7 @@
 //
 //
 
-#define O_BINARY 0
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +21,7 @@
 #include <arch/zxn.h>
 #include <arch/zxn/esxdos.h>
 
+#define MAX_HEADER_SIZE 0x14 // Size of largest block header
 #define MAJREV 1         // Major revision of the format this program supports
 #define MINREV 20        // Minor revision -||-
 
@@ -63,14 +63,16 @@ static uint32_t FileLength(unsigned char fh)
   return(es.size);
 }
 
+// read next header from input and return the position within the file (offset by 10)
 static uint32_t read_file(unsigned char fh, char *mem, uint32_t seek)
 {
   uint32_t posn = seek;
   esx_f_seek(fh, 10 + posn, ESX_SEEK_SET);
-  esx_f_read(fh, mem, 100);
+  esx_f_read(fh, mem, MAX_HEADER_SIZE);
   return posn;
 }
 
+// read chunks of 1K from input and write to output
 static void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uint32_t len)
 {
   char *buf;
@@ -109,7 +111,7 @@ int main(int argc, char *argv[])
   uint32_t pos, p;
   uint32_t len;
   long block;
-  int longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
+  bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
   char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
   uint32_t start;
   long loop_start = 0;
@@ -142,7 +144,7 @@ int main(int argc, char *argv[])
     Error("unable to create output file");
 
   flen=FileLength(fhi);
-  mem=(char *) malloc(100);
+  mem=(char *) malloc(MAX_HEADER_SIZE);
 
   if(mem==NULL) 
    Error("Not enough memory to load input file!");
@@ -166,9 +168,10 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     printf("\nWarning: Some of the data might not be properly recognised!\n");
 
-  pos=block=longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=0;
+  pos=block=0;
+  longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
 
-  /* read 100 bytes */
+  /* read next header bytes */
   start = read_file(fhi, mem, 0);
   start = 0; /* pos is always off by ten */
 
@@ -199,16 +202,16 @@ int main(int argc, char *argv[])
                    block++;
                    }
                  else 
-                   longer=1;
-                 custom=1;
+                   longer=true;
+                 custom=true;
                  pos+=len+0x12;
                  start = read_file(fhi, mem, pos);
                  break;
-      case 0x12: only=1;
+      case 0x12: only=true;
                  pos+=0x04;
                  start = read_file(fhi, mem, pos);
                  break;
-      case 0x13: only=1;
+      case 0x13: only=true;
                  pos+=(mem[p+0x00]*0x02)+0x01;
                  start = read_file(fhi, mem, pos);
                  break;
@@ -220,30 +223,30 @@ int main(int argc, char *argv[])
                    block++;
                    }
                  else 
-                   longer=1;
-                 dataonly=1;
+                   longer=true;
+                 dataonly=true;
                  pos+=len+0x0A;
                  start = read_file(fhi, mem, pos);
                  break;
-      case 0x15: direct=1;
+      case 0x15: direct=true;
                  pos+=Get3(&mem[p+0x05])+0x08;
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x16: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
-                 deprecated = 1;
+                 deprecated = true;
                  break;
       case 0x17: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
-                 deprecated = 1;
+                 deprecated = true;
                  break;
       case 0x18: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
-                 only = 1;
+                 only = true;
                  break;
       case 0x19: pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
-                 only = 1;
+                 only = true;
                  break;
       case 0x20: pos+=0x02;
                  start = read_file(fhi, mem, pos);
@@ -268,9 +271,9 @@ int main(int argc, char *argv[])
                  break;
       case 0x26: pos += (Get2(&mem[p+0x00])*2)+0x02;
                  start = read_file(fhi, mem, pos);
-                 call_seq = 1;
+                 call_seq = true;
                  break;
-      case 0x27: call_seq = 1;
+      case 0x27: call_seq = true;
                  break;
       case 0x28: pos += Get2(&mem[p+0x00])+0x02;
                  start = read_file(fhi, mem, pos);
@@ -292,14 +295,14 @@ int main(int argc, char *argv[])
                  break;
       case 0x34: pos+=0x08;
                  start = read_file(fhi, mem, pos);
-                 deprecated = 1;
+                 deprecated = true;
                  break;
       case 0x35: pos+=Get4(&mem[p+0x10])+0x14;
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x40: pos+=Get3(&mem[p+0x01])+0x04;
-                 snap = 1;
-                 deprecated = 1;
+                 snap = true;
+                 deprecated = true;
                  start = read_file(fhi, mem, pos);
                  break;
       case 0x5A: pos+=0x09;
@@ -307,7 +310,7 @@ int main(int argc, char *argv[])
                  break;
       default:   pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
-                 not_rec=1;
+                 not_rec=true;
       }
     }
 
