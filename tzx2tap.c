@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <arch/zxn.h>
 #include <arch/zxn/esxdos.h>
+#include <z80.h>
 
 #define MAX_HEADER_SIZE 0x14 // Size of largest block header
 #define MAJREV 1         // Major revision of the format this program supports
@@ -133,6 +133,8 @@ int main(int argc, char *argv[])
 
   old_cpu_speed = ZXN_READ_REG(REG_TURBO_MODE);
   ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
+
+  z80_bpoke(23692, 50);
 
   fhi = esx_f_open(argv[1], ESX_MODE_READ);
 
@@ -321,7 +323,7 @@ int main(int argc, char *argv[])
     printf("Warning: Custom Loading blocks  were converted\n\n");
 
   if(longer) 
-    printf("Warning: Over 64k long Custom   Loading blocks were not converted\n\n");
+    printf("Warning: Over 64k long Custom   Loading blocks not converted\n\n");
 
   if(only) 
     printf("Warning: Sequence of Pulses and/or Pure Tone blocks encountered\n\n");
