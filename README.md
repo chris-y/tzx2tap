@@ -1,14 +1,16 @@
 This is a version of TZX2TAP converted and built for the ZX Spectrum Next
 (NextZXOS) by Chris Young 2020.
 
-To install, copy TZX2TAP to c:/dot
+To install
+- copy TZX2TAP to c:/dot
+- copy tzxconv.bas to c:/nextzxos
 
 In c:/nextzxos/browser.cfg, modify the TZX line to be:
 
-    TZX<cls:.tzx2tap "|"
+    TZX<clear 65367:.tzx2tap "|":load "c:/nextzxos/tzxconv.bas":let f$="|":goto 9000
 
-This will mean selecting a TZX file in the browser will convert the file.
-The resulting TAP will then be available to open as usual.
+This will mean selecting a TZX file in the browser will convert the file, and then ask if you want to load it (similar to how the disk mounter works)
+The resulting TAP will be available to open as usual afterwards.
 
 Original readme follows...
 
