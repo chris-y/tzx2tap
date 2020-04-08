@@ -103,6 +103,45 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
   return 0;
 }
 
+static uint32_t convert_block(unsigned char fhi, unsigned char fho, char *mem, int type,
+  uint32_t first_off, uint32_t second_off, uint32_t *pos, uint32_t p, int *block, bool *longer)
+{
+  uint32_t len = 0;
+  int err = 0;
+
+  if(type == 2) {
+    len=Get2(&mem[p+first_off]);
+  } else {
+    len=Get3(&mem[p+first_off]);
+  }
+
+  if(len<65536) {
+    err = convert_data(fhi, fho, *pos+first_off, 2);
+    if(err) {
+      free(mem);
+      Error(err);
+    }
+
+    err = convert_data(fhi, fho, *pos+second_off, len);
+    if(err) {
+      free(mem);
+      Error(err);
+    }
+    *block++;
+  } else {
+    *longer = true;
+  }
+
+  *pos = *pos + len + second_off;
+  return read_file(fhi, mem, *pos);
+}
+
+static uint32_t skip_block(unsigned char fh, char *mem, uint32_t *pos, uint32_t p)
+{
+  *pos = *pos + Get4(&mem[p+0x00]+0x04);
+  return read_file(fh, mem, *pos);
+}
+
 int main(int argc, char *argv[])
 {
   unsigned char fhi,fho;
@@ -110,7 +149,6 @@ int main(int argc, char *argv[])
   char *mem;
   char buf[256];
   uint32_t pos, p;
-  uint32_t len;
   long block;
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
   char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
@@ -202,40 +240,10 @@ int main(int argc, char *argv[])
 
     switch(mem[p-1])
       {
-      case 0x10: len=Get2(&mem[p+0x02]);
-                 err = convert_data(fhi, fho, pos+0x02, 2);
-                 if(err) {
-                   free(mem);
-                   Error(err);
-                 }
-                 err = convert_data(fhi, fho, pos+0x04, len);
-                 if(err) {
-                   free(mem);
-                   Error(err);
-                 }
-                 pos+=len+0x04;
-                 start = read_file(fhi, mem, pos);
-                 block++;
+      case 0x10: start = convert_block(fhi, fho, mem, 2, 0x02, 0x04, &pos, p, &block, &longer);
                  break;
-      case 0x11: len=Get3(&mem[p+0x0F]);
-                 if(len<65536) {
-                   err = convert_data(fhi, fho, pos+0x0F, 2);
-                   if(err) {
-                     free(mem);
-                     Error(err);
-                   }
-                   err = convert_data(fhi, fho, pos+0x12, len);
-                   if(err) {
-                     free(mem);
-                     Error(err);
-                   }
-                   block++;
-                 }
-                 else 
-                   longer=true;
+      case 0x11: start = convert_block(fhi, fho, mem, 3, 0x0F, 0x12, &pos, p, &block, &longer);
                  custom=true;
-                 pos+=len+0x12;
-                 start = read_file(fhi, mem, pos);
                  break;
       case 0x12: only=true;
                  pos+=0x04;
@@ -245,45 +253,20 @@ int main(int argc, char *argv[])
                  pos+=(mem[p+0x00]*0x02)+0x01;
                  start = read_file(fhi, mem, pos);
                  break;
-      case 0x14: len=Get3(&mem[p+0x07]);
-                 if(len<65536) {
-                   err = convert_data(fhi, fho, pos+0x07, 2);
-                   if(err) {
-                     free(mem);
-                     Error(err);
-                   }
-                   err = convert_data(fhi, fho, pos+0x0A, len);
-                   if(err) {
-                     free(mem);
-                     Error(err);
-                   }
-                   block++;
-                 }
-                 else 
-                   longer=true;
+      case 0x14: start = convert_block(fhi, fho, mem, 3, 0x07, 0x0A, &pos, p, &block, &longer);
                  dataonly=true;
-                 pos+=len+0x0A;
-                 start = read_file(fhi, mem, pos);
                  break;
       case 0x15: direct=true;
                  pos+=Get3(&mem[p+0x05])+0x08;
                  start = read_file(fhi, mem, pos);
                  break;
-      case 0x16: pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
-                 deprecated = true;
+      case 0x16:
+      case 0x17: deprecated = true;
+                 start = skip_block(fhi, mem, &pos, p);
                  break;
-      case 0x17: pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
-                 deprecated = true;
-                 break;
-      case 0x18: pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
-                 only = true;
-                 break;
-      case 0x19: pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
-                 only = true;
+      case 0x18:
+      case 0x19: only = true;
+                 start = skip_block(fhi, mem, &pos, p);
                  break;
       case 0x20: pos+=0x02;
                  start = read_file(fhi, mem, pos);
@@ -315,8 +298,7 @@ int main(int argc, char *argv[])
       case 0x28: pos += Get2(&mem[p+0x00])+0x02;
                  start = read_file(fhi, mem, pos);
                  break;
-      case 0x2B: pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
+      case 0x2B: start = skip_block(fhi, mem, &pos, p);
                  break;
       case 0x30: pos+=mem[p+0x00]+0x01;
                  start = read_file(fhi, mem, pos);
@@ -345,8 +327,7 @@ int main(int argc, char *argv[])
       case 0x5A: pos+=0x09;
                  start = read_file(fhi, mem, pos);
                  break;
-      default:   pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
+      default:   start = skip_block(fhi, mem, &pos, p);
                  not_rec=true;
       }
     }
