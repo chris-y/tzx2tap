@@ -16,7 +16,7 @@
 #include <arch/zxn/sysvar.h>
 #include <z80.h>
 
-#define PROGVER "1.2beta"
+#define PROGVER "1.2"
 
 #define MAX_HEADER_SIZE 0x14 // Size of largest block header
 #define MAJREV 1         // Major revision of the format this program supports
