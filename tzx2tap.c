@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
   if(errno) {
     if(errno == ESX_EEXIST) {
-      printf("Error: Output file exists\nProbably already converted!\n");
+      printf("\nError: Output file exists\nProbably already converted!\n");
       Error(0);
     } else {
       Error(errno);
