@@ -4,6 +4,7 @@
 // Based on TZX to TAP converter v0.13b (c) 1997 Tomaz Kac
 //
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@
 #include <unistd.h>
 #include <arch/zxn.h>
 #include <arch/zxn/esxdos.h>
+#include <arch/zxn/sysvar.h>
 #include <z80.h>
 
 #define PROGVER "1.2beta"
@@ -29,11 +31,11 @@ static uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256
 static uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
 
 // exits with an error message *errstr
-static void Error(char *errstr)
+static void Error(char *errstr, int eno)
 {
   printf("\nError: %s\n",errstr);
   ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
-  exit(0);
+  exit(eno);
 }
 
 // Changes the File Extension of String *str to *ext
@@ -55,10 +57,10 @@ static void ChangeFileExtension(char *str,char *ext)
 static uint32_t FileLength(unsigned char fh)
 {
   struct esx_stat es;
-  
+
+  errno = 0;
   if(esx_f_fstat(fh, (struct esx_stat *)&es)) {
-    Error("unable to stat file");
-    return 0;
+    Error("unable to stat file", errno);
   }
   return(es.size);
 }
@@ -81,7 +83,7 @@ static void convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, ui
   buf=(char *) malloc(1024);
 
   if(buf==NULL) 
-    Error("Not enough memory to convert");
+    Error("Not enough memory to convert", ERRB_4_OUT_OF_MEMORY);
 
   esx_f_seek(fhi, posn, ESX_SEEK_SET);
 
@@ -137,34 +139,40 @@ int main(int argc, char *argv[])
 
   z80_bpoke(23692, 50);
 
+  errno = 0;
   fhi = esx_f_open(argv[1], ESX_MODE_READ);
 
-  if(fhi==255) 
-    Error("Input file not found");
+  if(errno) 
+    Error("Input file not found", errno);
 
+  errno = 0;
   fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
 
-  if(fho==255)
-    Error("Cannot create output file");
+  if(errno) {
+    if(errno == ESX_EEXIST) {
+      Error("Output file exists\nProbably already converted!", 0);
+    } else {
+      Error("Cannot create output file", errno);
+    }
+  }
 
   flen=FileLength(fhi);
   mem=(char *) malloc(MAX_HEADER_SIZE);
 
   if(mem==NULL) 
-   Error("Not enough memory");
+   Error("Not enough memory", ERRB_4_OUT_OF_MEMORY);
 
   esx_f_read(fhi,mem,10); mem[7]=0;
 
-  if(strcmp(mem,"ZXTape!")) 
-    { 
+  if(strcmp(mem,"ZXTape!")) { 
     free(mem);
-    Error("Input is not TZX format"); 
-    }
+    Error("Input is not TZX format", ESX_EWRTYPE); 
+  }
 
   printf("\nZXTape file revision %d.%02d\n",mem[8],mem[9]);
 
   if(!mem[8]) 
-    Error("\nTZX dev ver not supported");
+    Error("\nTZX dev ver not supported", ESX_EWRTYPE);
 
   if(mem[8]>MAJREV) 
     printf("\nWarning: Some blocks may not be recognised and used\n");
