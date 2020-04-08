@@ -14,7 +14,7 @@ In c:/nextzxos/browser.cfg, modify the TZX line to be:
 
 This will mean selecting a TZX file in the browser will convert the file, and then ask if you want to load it (similar to how the disk mounter works).  If no warnings are displayed it is highly likely the file will open fine on a basic Next.
 
-The resulting TAP (named the same but with a .tap extension) will remain available to open as usual afterwards.
+The resulting TAP (named the same but with a .tap extension) will remain available to open as usual afterwards.  If the file already exists it will print an error but will return OK as it assumes the file has already been converted.
 
 This allows you to easily open TZX files on an unexpanded Spectrum Next, provided no custom loader is present in the file.
 
