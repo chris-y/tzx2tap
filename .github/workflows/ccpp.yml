@@ -1,0 +1,13 @@
+on: [push]
+
+jobs:
+  build_job:
+    runs-on: ubuntu-latest
+    name: build
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        id: build
+        uses: chris-y/cross-docker-action-z88dk@HEAD
+        with:
+          makefile: 'Makefile'
