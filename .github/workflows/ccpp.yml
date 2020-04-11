@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: z88dk/z88dk
-      options: -v ${PWD}:/src
+#      options: -v ${PWD}:/src
     name: build
     steps:
       - uses: actions/checkout@v2
