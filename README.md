@@ -1,3 +1,6 @@
+![.github/workflows/z88dk.yml](https://github.com/chris-y/tzx2tap/workflows/.github/workflows/z88dk.yml/badge.svg)
+
+
 **TZX2TAP v1.2** by Chris Young 2020
 
 TZX to TAP file conversion for the ZX Spectrum Next (NextZXOS) as a dot command.
