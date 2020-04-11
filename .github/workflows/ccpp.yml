@@ -9,5 +9,7 @@ jobs:
       - name: build
         id: build
         uses: chris-y/cross-docker-action-z88dk@HEAD
+        volumes:
+          - ${PWD}:/src
         with:
           makefile: 'Makefile'
