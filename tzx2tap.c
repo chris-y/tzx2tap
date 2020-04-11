@@ -16,7 +16,7 @@
 #include <arch/zxn/sysvar.h>
 #include <z80.h>
 
-#define PROGVER "1.2"
+#define PROGVER "1.3beta"
 
 #define MAX_HEADER_SIZE 0x14 // Size of largest block header
 #define MAJREV 1         // Major revision of the format this program supports
@@ -81,8 +81,10 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
 
   buf=(char *) malloc(1024);
 
-  if(buf==NULL) 
-    return ERRB_4_OUT_OF_MEMORY;
+  if(buf==NULL) {
+    printf("\nNot enough memory");
+    Error(0); //ERRB_4_OUT_OF_MEMORY
+  }
 
   esx_f_seek(fhi, posn, ESX_SEEK_SET);
 
@@ -113,27 +115,54 @@ int main(int argc, char *argv[])
   uint32_t len;
   long block;
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
+  bool verbose = false;
+  bool help = false;
   char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
   uint32_t start;
   long loop_start = 0;
   int loop_count = 0;
   int err = 0;
+  int i;
+  char *src = NULL;
+  char *dst = NULL;
 
   printf("TZX2TAP for NextZXOS v%s\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n", PROGVER);
   printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
-  if(argc<2|| argc>3)
-    {
-    printf("\nUsage: .TZX2TAP IN.TZX [OUT.TAP]\n");
-    exit(0);
-    }
 
-  if(argc==2) 
-    {  
-    strcpy(buf,argv[1]); 
-    ChangeFileExtension(buf,"tap"); 
+  if(argc>1) {
+    for(i=1;i<argc;i++) {
+      if(strcmp(argv[i], "-v") == 0) {
+        verbose = true;
+      } else if(strcmp(argv[i], "-h") == 0) {
+        help = true;
+      } else {
+        if(src==NULL) {
+          src = argv[i];
+        } else if(dst==NULL) {
+          dst = argv[i];
+        } else {
+          help = true;
+        }
+      }
     }
-  else      
-    strcpy(buf,argv[2]);
+  } else {
+    help = true;
+  }
+
+  if((help==true) || (src==NULL)) {
+    printf("\nUsage:\n  .TZX2TAP [ARGS] IN.TZX [OUT.TAP]\n");
+    printf("\nWhere ARGS are:\n");
+    printf("  -h Show this help\n");
+    printf("  -v Verbose\n");
+    exit(0);
+  }
+
+  if(dst==NULL) {
+    strcpy(buf,src); 
+    ChangeFileExtension(buf,"tap"); 
+  } else {
+    strcpy(buf,dst);
+  }
 
   old_cpu_speed = ZXN_READ_REG(REG_TURBO_MODE);
   ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
@@ -141,7 +170,7 @@ int main(int argc, char *argv[])
   z80_bpoke(23692, 50);
 
   errno = 0;
-  fhi = esx_f_open(argv[1], ESX_MODE_READ);
+  fhi = esx_f_open(src, ESX_MODE_READ);
 
   if(errno) 
     Error(errno);
@@ -161,8 +190,10 @@ int main(int argc, char *argv[])
   flen=FileLength(fhi);
   mem=(char *) malloc(MAX_HEADER_SIZE);
 
-  if(mem==NULL) 
-   Error(ERRB_4_OUT_OF_MEMORY);
+  if(mem==NULL) {
+    printf("\nNot enough memory");
+    Error(0); //ERRB_4_OUT_OF_MEMORY
+  }
 
   esx_f_read(fhi,mem,10); mem[7]=0;
 
@@ -198,7 +229,11 @@ int main(int argc, char *argv[])
     pos++;
     p = pos - start;
 
-    printf(".");
+    if(verbose) {
+      printf("\nBlock %x", mem[p-1]);
+    } else {
+      printf(".");
+    }
 
     switch(mem[p-1])
       {
