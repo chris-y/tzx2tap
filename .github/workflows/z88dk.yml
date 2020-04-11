@@ -15,3 +15,6 @@ jobs:
           cd $GITHUB_WORKSPACE
           ls -la
           make -f Makefile
+      - uses: actions/upload-artifact@v1
+        with:
+          name: TZX2TAP
