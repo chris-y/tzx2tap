@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   }
 
   if((help==true) || (src==NULL)) {
-    printf("\nUsage:\n  .TZX2TAP [ARGS] IN.TZX [OUT.TAP]\n");
+    printf("\nUsage:\n.TZX2TAP [ARGS] IN.TZX [OUT.TAP]\n");
     printf("\nWhere ARGS are:\n");
     printf("  -h Show this help\n");
     printf("  -v Verbose\n");
