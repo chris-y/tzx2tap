@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   uint32_t flen;
   char *mem;
   char buf[256];
-  uint32_t pos, p;
+  uint32_t pos, p, oldpos;
   uint32_t len;
   long block;
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
@@ -224,12 +224,17 @@ int main(int argc, char *argv[])
 
   printf("\nConverting...");
 
+  if(verbose) {
+    printf("\nBlk Len  Desc");
+  }
+
   while(pos<flen) {
     pos++;
     p = pos - start;
 
     if(verbose) {
-      printf("\nBlock %x", mem[p-1]);
+      printf("\n%x  ", mem[p-1]);
+      oldpos = pos;
     } else {
       printf(".");
     }
@@ -376,6 +381,14 @@ int main(int argc, char *argv[])
       default:   pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
                  not_rec=true;
+      }
+
+      if(verbose) {
+        if(pos > oldpos) {
+          printf("%lx ", pos - oldpos);
+        } else {
+          printf("0000 ");
+        }
       }
     }
 
