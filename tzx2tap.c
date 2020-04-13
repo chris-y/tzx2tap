@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   uint32_t flen;
   char *mem;
   char buf[256];
-  uint32_t pos, p, oldpos;
+  uint32_t pos, p, oldpos = 0;
   uint32_t len;
   long block;
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
