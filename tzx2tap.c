@@ -122,6 +122,8 @@ int main(int argc, char *argv[])
   int loop_count = 0;
   int err = 0;
   int i;
+  int converted = 0;
+  char conv[3]={0x20, 0x2b, 0x2a};
   char *src = NULL;
   char *dst = NULL;
 
@@ -233,9 +235,10 @@ int main(int argc, char *argv[])
     p = pos - start;
 
     if(verbose) {
-      printf("\n%02x ", mem[p-1]);
+      printf("\n%02x", mem[p-1]);
       oldpos = pos;
       strcpy(buf, "");
+      converted = 0;
     } else {
       printf(".");
     }
@@ -255,6 +258,7 @@ int main(int argc, char *argv[])
                  }
                  pos+=len+0x04;
                  start = read_file(fhi, mem, pos);
+                 if(verbose) converted = 1;
                  block++;
                  break;
       case 0x11: len=Get3(&mem[p+0x0F]);
@@ -269,10 +273,13 @@ int main(int argc, char *argv[])
                      free(mem);
                      Error(err);
                    }
+                   if(verbose) converted = 2;
                    block++;
                  }
-                 else 
+                 else {
                    longer=true;
+                   if(verbose) converted = 0;
+                 }
                  custom=true;
                  pos+=len+0x12;
                  start = read_file(fhi, mem, pos);
@@ -297,10 +304,13 @@ int main(int argc, char *argv[])
                      free(mem);
                      Error(err);
                    }
+                   if(verbose) converted = 2;
                    block++;
                  }
-                 else 
+                 else {
                    longer=true;
+                   if(verbose) converted = 0;
+                 }
                  dataonly=true;
                  pos+=len+0x0A;
                  start = read_file(fhi, mem, pos);
@@ -333,12 +343,20 @@ int main(int argc, char *argv[])
                  loop_start=pos;
                  loop_count=Get2(&mem[p+0x00]);
                  start = read_file(fhi, mem, pos);
+                 if(verbose) {
+                   converted = 1;
+                   sprintf(buf, "Loop start, count=%02x", loop_count);
+                 }
                  break;
       case 0x25: if(loop_count > 0) {
                    pos = loop_start;
                    loop_count--;
                  }
                  start = read_file(fhi, mem, pos);
+                 if(verbose) {
+                   converted = 1;
+                   sprintf(buf, "Loop end, count=%02x", loop_count);
+                 }
                  break;
       case 0x26: pos += (Get2(&mem[p+0x00])*2)+0x02;
                  start = read_file(fhi, mem, pos);
@@ -386,6 +404,7 @@ int main(int argc, char *argv[])
       }
 
       if(verbose) {
+          printf("%c", conv[converted]);
         if(pos > oldpos) {
           printf("%04lx %s", pos - oldpos, buf);
         } else {
