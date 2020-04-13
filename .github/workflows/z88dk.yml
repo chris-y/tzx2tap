@@ -20,6 +20,7 @@ jobs:
         with:
           name: TZX2TAP
           path: ./TZX2TAP
+      - uses: actions/upload-artifact@v1
         with:
           name: tzxconv.bas
           path: ./tzxconv.bas
