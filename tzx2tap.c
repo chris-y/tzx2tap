@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
   printf("\nConverting...");
 
   if(verbose) {
-    printf("\nBlk Len  Desc");
+    printf("\nID Len  Desc");
   }
 
   while(pos<flen) {
@@ -233,8 +233,9 @@ int main(int argc, char *argv[])
     p = pos - start;
 
     if(verbose) {
-      printf("\n%x  ", mem[p-1]);
+      printf("\n%x ", mem[p-1]);
       oldpos = pos;
+      strcpy(buf, "");
     } else {
       printf(".");
     }
@@ -381,13 +382,14 @@ int main(int argc, char *argv[])
       default:   pos+=Get4(&mem[p+0x00]+0x04);
                  start = read_file(fhi, mem, pos);
                  not_rec=true;
+                 if(verbose) strcpy(buf, "UNKNOWN");
       }
 
       if(verbose) {
         if(pos > oldpos) {
-          printf("%lx ", pos - oldpos);
+          printf("%lx %s", pos - oldpos, buf);
         } else {
-          printf("0000 ");
+          printf("0000 %s", buf);
         }
       }
     }
