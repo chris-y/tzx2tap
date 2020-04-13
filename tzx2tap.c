@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     p = pos - start;
 
     if(verbose) {
-      printf("\n%x ", mem[p-1]);
+      printf("\n%02x ", mem[p-1]);
       oldpos = pos;
       strcpy(buf, "");
     } else {
@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
 
       if(verbose) {
         if(pos > oldpos) {
-          printf("%lx %s", pos - oldpos, buf);
+          printf("%04lx %s", pos - oldpos, buf);
         } else {
           printf("0000 %s", buf);
         }
