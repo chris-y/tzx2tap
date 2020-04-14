@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
   uint32_t start;
   long loop_start = 0;
-  int loop_count = 0;
+  uint32_t loop_count = 0;
   int err = 0;
   int i;
   int converted = 0;
@@ -221,16 +221,14 @@ int main(int argc, char *argv[])
   block=0;
   longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
 
-  /* read next header bytes */
-  start = read_file(fhi, mem, 10);
-
   printf("\nConverting...");
 
   if(verbose) {
-    printf("\nID Len  Desc");
+    printf("\nID Len  ");
   }
 
   while(pos<flen) {
+    start = read_file(fhi, mem, pos);
     pos++;
     p = pos - start;
 
@@ -257,8 +255,10 @@ int main(int argc, char *argv[])
                    Error(err);
                  }
                  pos+=len+0x04;
-                 start = read_file(fhi, mem, pos);
-                 if(verbose) converted = 1;
+                 if(verbose) {
+                   converted = 1;
+                   strcpy(buf, "Standard data");
+                 }
                  block++;
                  break;
       case 0x11: len=Get3(&mem[p+0x0F]);
@@ -282,15 +282,15 @@ int main(int argc, char *argv[])
                  }
                  custom=true;
                  pos+=len+0x12;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Turbo data");
                  break;
       case 0x12: only=true;
                  pos+=0x04;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Pure tone");
                  break;
       case 0x13: only=true;
                  pos+=(mem[p+0x00]*0x02)+0x01;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Pulse sequence");
                  break;
       case 0x14: len=Get3(&mem[p+0x07]);
                  if(len<65536) {
@@ -313,92 +313,93 @@ int main(int argc, char *argv[])
                  }
                  dataonly=true;
                  pos+=len+0x0A;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Custom data");
                  break;
       case 0x15: direct=true;
                  pos+=Get3(&mem[p+0x05])+0x08;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Direct recording");
                  break;
       case 0x16:
       case 0x17: deprecated = true;
                  pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "C64 %s", mem[p-1]==0x16 ? "standard" : "turbo");
                  break;
-      case 0x18:
+      case 0x18: 
       case 0x19: only = true;
                  pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "%s", mem[p-1]==0x18 ? "CSW recording" : "General data");
                  break;
       case 0x20: pos+=0x02;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Pause for %lxms", Get2(&mem[p+0x00]));
                  break;
       case 0x21: pos+=mem[p+0x00]+0x01;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Group start: %.*s", mem[p+0x00]>11 ? 11 : mem[p+0x00], &mem[p+0x01]);
                  break;
-      case 0x22: break;
+      case 0x22: if(verbose) strcpy(buf, "Group end");
+                 break;
       case 0x23: pos+=0x02;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Jump %ld blocks", Get2(&mem[p+0x00]));
                  break;
       case 0x24: pos+=0x02;
                  loop_start=pos;
                  loop_count=Get2(&mem[p+0x00]);
-                 start = read_file(fhi, mem, pos);
                  if(verbose) {
                    converted = 1;
-                   sprintf(buf, "Loop start, count=%02x", loop_count);
+                   sprintf(buf, "Loop start, count=%lx", loop_count);
                  }
                  break;
       case 0x25: if(loop_count > 0) {
                    pos = loop_start;
                    loop_count--;
                  }
-                 start = read_file(fhi, mem, pos);
                  if(verbose) {
                    converted = 1;
-                   sprintf(buf, "Loop end, count=%02x", loop_count);
+                   sprintf(buf, "Loop end, count=%lx", loop_count);
                  }
                  break;
       case 0x26: pos += (Get2(&mem[p+0x00])*2)+0x02;
-                 start = read_file(fhi, mem, pos);
                  call_seq = true;
+                 if(verbose) strcpy(buf, "Call sequence");
                  break;
       case 0x27: call_seq = true;
+                 if(verbose) strcpy(buf, "Call sequence return");
                  break;
       case 0x28: pos += Get2(&mem[p+0x00])+0x02;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Select, items=%lx", mem[p+0x02]);
                  break;
+      case 0x2A: pos+=Get4(&mem[p+0x00]+0x04);
+                 if(verbose) strcpy(buf, "Stop tape in 48K mode");
       case 0x2B: pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Set signal level %s", mem[p+0x04] == 0 ? "low" : "high");
                  break;
       case 0x30: pos+=mem[p+0x00]+0x01;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Desc: %.*s", mem[p+0x00]>18 ? 18 : mem[p+0x00], &mem[p+0x01]);
                  break;
       case 0x31: pos+=mem[p+0x01]+0x02;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Message: %.*s", mem[p+0x01]>15 ? 15 : mem[p+0x01], &mem[p+0x02]);
                  break;
       case 0x32: pos+=Get2(&mem[p+0x00])+0x02;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Archive info");
                  break;
       case 0x33: pos+=(mem[p+0x00]*0x03)+0x01;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Hardware type");
                  break;
       case 0x34: pos+=0x08;
-                 start = read_file(fhi, mem, pos);
                  deprecated = true;
+                 if(verbose) strcpy(buf, "Emulation info");
                  break;
       case 0x35: pos+=Get4(&mem[p+0x10])+0x14;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Custom info: %.*s", 10, &mem[p+0x00]);
                  break;
       case 0x40: pos+=Get3(&mem[p+0x01])+0x04;
                  snap = true;
                  deprecated = true;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) sprintf(buf, "Snapshot: %s", mem[p+0x00] == 0 ? "Z80" : "SNA");
                  break;
       case 0x5A: pos+=0x09;
-                 start = read_file(fhi, mem, pos);
+                 if(verbose) strcpy(buf, "Glue block");
                  break;
       default:   pos+=Get4(&mem[p+0x00]+0x04);
-                 start = read_file(fhi, mem, pos);
                  not_rec=true;
                  if(verbose) strcpy(buf, "UNKNOWN");
       }
