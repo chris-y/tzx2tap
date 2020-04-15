@@ -173,7 +173,9 @@ int main(int argc, char *argv[])
   old_cpu_speed = ZXN_READ_REG(REG_TURBO_MODE);
   ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
 
-  z80_bpoke(23692, 50);
+  if(list==false) {
+    z80_bpoke(23692, 50);
+  }
 
   errno = 0;
   fhi = esx_f_open(src, ESX_MODE_READ);
@@ -343,7 +345,7 @@ int main(int argc, char *argv[])
                  if(verbose) sprintf(buf, "%s", mem[p-1]==0x18 ? "CSW recording" : "General data");
                  break;
       case 0x20: pos+=0x02;
-                 if(verbose) sprintf(buf, "Pause for %lxms", Get2(&mem[p+0x00]));
+                 if(verbose) sprintf(buf, "Pause for %ldms", Get2(&mem[p+0x00]));
                  break;
       case 0x21: pos+=mem[p+0x00]+0x01;
                  if(verbose) sprintf(buf, "Group start: %.*s", mem[p+0x00]>11 ? 11 : mem[p+0x00], &mem[p+0x01]);
@@ -360,7 +362,7 @@ int main(int argc, char *argv[])
                  }
                  if(verbose) {
                    converted = 1;
-                   sprintf(buf, "Loop start, count=%lx", loop_count);
+                   sprintf(buf, "Loop start, count=%ld", loop_count);
                  }
                  break;
       case 0x25: if(list==false) {
@@ -371,7 +373,7 @@ int main(int argc, char *argv[])
                  }
                  if(verbose) {
                    converted = 1;
-                   sprintf(buf, "Loop end, count=%lx", loop_count);
+                   sprintf(buf, "Loop end, count=%ld", loop_count);
                  }
                  break;
       case 0x26: pos += (Get2(&mem[p+0x00])*2)+0x02;
@@ -382,7 +384,7 @@ int main(int argc, char *argv[])
                  if(verbose) strcpy(buf, "Call sequence return");
                  break;
       case 0x28: pos += Get2(&mem[p+0x00])+0x02;
-                 if(verbose) sprintf(buf, "Select, items=%lx", mem[p+0x02]);
+                 if(verbose) sprintf(buf, "Select, items=%ld", mem[p+0x02]);
                  break;
       case 0x2A: pos+=Get4(&mem[p+0x00]+0x04);
                  if(verbose) strcpy(buf, "Stop tape in 48K mode");
