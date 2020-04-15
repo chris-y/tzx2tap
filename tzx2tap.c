@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
                  if(verbose) {
                    converted = 1;
                    if(mem[p+0x04]==0) { //header
-                         sprintf("%s: %.10s", type[mem[p+0x05]], &mem[p+0x06]);
+                         sprintf(buf, "%s: %.10s", type[mem[p+0x05]], &mem[p+0x06]);
                    } else {
                      strcpy(buf, "Standard data");
                    }
