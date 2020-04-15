@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
                  if(verbose) sprintf(buf, "Pause for %ldms", Get2(&mem[p+0x00]));
                  break;
       case 0x21: pos+=mem[p+0x00]+0x01;
-                 if(verbose) sprintf(buf, "Group start: %.*s", mem[p+0x00]>11 ? 11 : mem[p+0x00], &mem[p+0x01]);
+                 if(verbose) sprintf(buf, "Group: %.*s", mem[p+0x00]>17 ? 17 : mem[p+0x00], &mem[p+0x01]);
                  break;
       case 0x22: if(verbose) strcpy(buf, "Group end");
                  break;
