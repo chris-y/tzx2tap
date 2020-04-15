@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
   int i;
   int converted = 0;
   char conv[3]={0x20, 0x2b, 0x2a};
+  char *type[4]={"Program", "Num array", "Char array", "Bytes"};
   char *src = NULL;
   char *dst = NULL;
 
@@ -265,31 +266,15 @@ int main(int argc, char *argv[])
                      Error(err);
                    }
                  }
-                 pos+=len+0x04;
                  if(verbose) {
                    converted = 1;
-                   if(mem[p+0x06]==0) { //header
-                     switch(mem[p+0x07]) {
-                       case 0:
-                         sprintf("Program: %.10s", &mem[p+0x08]);
-                       break;
-                       case 1:
-                         sprintf("Num array: %.10s", &mem[p+0x08]);
-                       break;
-                       case 2:
-                         sprintf("Char array: %.10s", &mem[p+0x08]);
-                       break;
-                       case 3:
-                         sprintf("Bytes: %.10s", &mem[p+0x08]);
-                       break;
-                       default:
-                         sprintf("Type %x: %.10s", mem[p+0x07], &mem[p+0x08]);
-                       break;
-                     }
+                   if(mem[p+0x04]==0) { //header
+                         sprintf("%s: %.10s", type[mem[p+0x05]], &mem[p+0x06]);
                    } else {
                      strcpy(buf, "Standard data");
                    }
                  }
+                 pos+=len+0x04;
                  block++;
                  break;
       case 0x11: len=Get3(&mem[p+0x0F]);
