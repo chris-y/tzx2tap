@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
   char *dst = NULL;
 
   printf("TZX2TAP for NextZXOS v%s\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n", PROGVER);
-  printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
+//  printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
 
   if(argc>1) {
     for(i=1;i<argc;i++) {
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
                    if(mem[p+0x04]==0) { //header
                          sprintf(buf, "%s: %.10s", type[mem[p+0x05]], &mem[p+0x06]);
                    } else {
-                     strcpy(buf, "Standard data");
+                     strcpy(buf, "Data: %ld bytes", len);
                    }
                  }
                  pos+=len+0x04;
