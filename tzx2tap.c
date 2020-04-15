@@ -268,7 +268,27 @@ int main(int argc, char *argv[])
                  pos+=len+0x04;
                  if(verbose) {
                    converted = 1;
-                   strcpy(buf, "Standard data");
+                   if(mem[p+0x05]==0) { //header
+                     switch(mem[p+0x06]) {
+                       case 0:
+                         sprintf("Program: %.10s", &mem[p+0x07]);
+                       break;
+                       case 1:
+                         sprintf("Num array: %.10s", &mem[p+0x07]);
+                       break;
+                       case 2:
+                         sprintf("Char array: %.10s", &mem[p+0x07]);
+                       break;
+                       case 3:
+                         sprintf("Bytes: %.10s", &mem[p+0x07]);
+                       break;
+                       default:
+                         sprintf("Type %x: %.10s", mem[p+0x06], &mem[p+0x07]);
+                       break;
+                     }
+                   } else {
+                     strcpy(buf, "Standard data");
+                   }
                  }
                  block++;
                  break;
