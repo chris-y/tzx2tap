@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
   bool verbose = false;
   bool help = false;
+  bool list = false;
   char tzxbuf[10]={ 'Z','X','T','a','p','e','!', 0x1A, 1, 00 };
   uint32_t start;
   long loop_start = 0;
@@ -134,6 +135,9 @@ int main(int argc, char *argv[])
     for(i=1;i<argc;i++) {
       if(strcmp(argv[i], "-v") == 0) {
         verbose = true;
+      } else if(strcmp(argv[i], "-l") == 0) {
+        list = true;
+        verbose = true; /* list implies verbose */
       } else if(strcmp(argv[i], "-h") == 0) {
         help = true;
       } else {
@@ -150,10 +154,11 @@ int main(int argc, char *argv[])
     help = true;
   }
 
-  if((help==true) || (src==NULL)) {
+  if((help==true) || (src==NULL) || ((list==true) && (dst!=NULL))) {
     printf("\nUsage:\n.TZX2TAP [ARGS] IN.TZX [OUT.TAP]\n");
     printf("\nWhere ARGS are:\n");
     printf("  -h Show this help\n");
+    printf("  -l List\n");
     printf("  -v Verbose\n");
     exit(0);
   }
@@ -176,15 +181,17 @@ int main(int argc, char *argv[])
   if(errno) 
     Error(errno);
 
-  errno = 0;
-  fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
+  if(list==false) {
+    errno = 0;
+    fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
 
-  if(errno) {
-    if(errno == ESX_EEXIST) {
-      printf("\nError: Output file exists\nProbably already converted!\n");
-      Error(0);
-    } else {
-      Error(errno);
+    if(errno) {
+      if(errno == ESX_EEXIST) {
+        printf("\nError: Output file exists\nProbably already converted!\n");
+        Error(0);
+      } else {
+        Error(errno);
+      }
     }
   }
 
@@ -221,7 +228,7 @@ int main(int argc, char *argv[])
   block=0;
   longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
 
-  printf("\nConverting...");
+  if(list==false) printf("\nConverting...");
 
   if(verbose) {
     printf("\nID Len  ");
@@ -244,15 +251,17 @@ int main(int argc, char *argv[])
     switch(mem[p-1])
       {
       case 0x10: len=Get2(&mem[p+0x02]);
-                 err = convert_data(fhi, fho, pos+0x02, 2);
-                 if(err) {
-                   free(mem);
-                   Error(err);
-                 }
-                 err = convert_data(fhi, fho, pos+0x04, len);
-                 if(err) {
-                   free(mem);
-                   Error(err);
+                 if(list==false) {
+                   err = convert_data(fhi, fho, pos+0x02, 2);
+                   if(err) {
+                     free(mem);
+                     Error(err);
+                   }
+                   err = convert_data(fhi, fho, pos+0x04, len);
+                   if(err) {
+                     free(mem);
+                     Error(err);
+                   }
                  }
                  pos+=len+0x04;
                  if(verbose) {
@@ -263,15 +272,17 @@ int main(int argc, char *argv[])
                  break;
       case 0x11: len=Get3(&mem[p+0x0F]);
                  if(len<65536) {
-                   err = convert_data(fhi, fho, pos+0x0F, 2);
-                   if(err) {
-                     free(mem);
-                     Error(err);
-                   }
-                   err = convert_data(fhi, fho, pos+0x12, len);
-                   if(err) {
-                     free(mem);
-                     Error(err);
+                   if(list==false) {
+                     err = convert_data(fhi, fho, pos+0x0F, 2);
+                     if(err) {
+                       free(mem);
+                       Error(err);
+                     }
+                     err = convert_data(fhi, fho, pos+0x12, len);
+                     if(err) {
+                       free(mem);
+                       Error(err);
+                     }
                    }
                    if(verbose) converted = 2;
                    block++;
@@ -294,15 +305,17 @@ int main(int argc, char *argv[])
                  break;
       case 0x14: len=Get3(&mem[p+0x07]);
                  if(len<65536) {
-                   err = convert_data(fhi, fho, pos+0x07, 2);
-                   if(err) {
-                     free(mem);
-                     Error(err);
-                   }
-                   err = convert_data(fhi, fho, pos+0x0A, len);
-                   if(err) {
-                     free(mem);
-                     Error(err);
+                   if(list==false) {
+                     err = convert_data(fhi, fho, pos+0x07, 2);
+                     if(err) {
+                       free(mem);
+                       Error(err);
+                     }
+                     err = convert_data(fhi, fho, pos+0x0A, len);
+                     if(err) {
+                       free(mem);
+                       Error(err);
+                     }
                    }
                    if(verbose) converted = 2;
                    block++;
@@ -341,16 +354,20 @@ int main(int argc, char *argv[])
                  if(verbose) sprintf(buf, "Jump %ld blocks", Get2(&mem[p+0x00]));
                  break;
       case 0x24: pos+=0x02;
-                 loop_start=pos;
-                 loop_count=Get2(&mem[p+0x00]);
+                 if(list==false) {
+                   loop_start=pos;
+                   loop_count=Get2(&mem[p+0x00]);
+                 }
                  if(verbose) {
                    converted = 1;
                    sprintf(buf, "Loop start, count=%lx", loop_count);
                  }
                  break;
-      case 0x25: if(loop_count > 0) {
-                   pos = loop_start;
-                   loop_count--;
+      case 0x25: if(list==false) {
+                   if(loop_count > 0) {
+                     pos = loop_start;
+                     loop_count--;
+                   }
                  }
                  if(verbose) {
                    converted = 1;
@@ -416,36 +433,42 @@ int main(int argc, char *argv[])
 
   printf("\n\n");
 
-  if(custom) 
-    printf("Warning: Custom Loading blocks  were converted\n\n");
+  if(list==false) {
 
-  if(longer) 
-    printf("Warning: Over 64k long Custom   Loading blocks not converted\n\n");
+    if(custom) 
+      printf("Warning: Custom Loading blocks  were converted\n\n");
 
-  if(only) 
-    printf("Warning: Sequence of Pulses and/or Pure Tone blocks encountered\n\n");
+    if(longer) 
+      printf("Warning: Over 64k long Custom   Loading blocks not converted\n\n");
 
-  if(dataonly) 
-    printf("Warning: Data Only blocks were  converted\n\n");
+    if(only) 
+      printf("Warning: Sequence of Pulses and/or Pure Tone blocks encountered\n\n");
 
-  if(direct) 
-    printf("Warning: Direct Recording blockswere encountered\n\n");
+    if(dataonly) 
+      printf("Warning: Data Only blocks were  converted\n\n");
 
-  if(call_seq) 
-    printf("Warning: Call sequence blocks   were encountered\n\n");
+    if(direct) 
+      printf("Warning: Direct Recording blockswere encountered\n\n");
 
-  if(deprecated) 
-    printf("Warning: Deprecated blocks were encountered\n\n");
+    if(call_seq) 
+      printf("Warning: Call sequence blocks   were encountered\n\n");
 
-  if(snap)
-    printf("Note: Embedded snapshot(s) not  extracted\n\n");
+    if(deprecated) 
+      printf("Warning: Deprecated blocks were encountered\n\n");
 
-  if(not_rec) 
-    printf("Warning: Some blocks were NOT   recognised\n\n");
+    if(snap)
+      printf("Note: Embedded snapshot(s) not  extracted\n\n");
 
-  printf("Converted %d blocks\n",block);
+    if(not_rec) 
+      printf("Warning: Some blocks were NOT   recognised\n\n");
+
+    printf("Converted %d blocks\n",block);
+
+    esx_f_close(fho);
+  }
+
   esx_f_close(fhi);
-  esx_f_close(fho);
+
   free(mem);
 
   ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
