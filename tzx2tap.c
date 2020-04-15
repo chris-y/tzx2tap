@@ -268,22 +268,22 @@ int main(int argc, char *argv[])
                  pos+=len+0x04;
                  if(verbose) {
                    converted = 1;
-                   if(mem[p+0x05]==0) { //header
-                     switch(mem[p+0x06]) {
+                   if(mem[p+0x06]==0) { //header
+                     switch(mem[p+0x07]) {
                        case 0:
-                         sprintf("Program: %.10s", &mem[p+0x07]);
+                         sprintf("Program: %.10s", &mem[p+0x08]);
                        break;
                        case 1:
-                         sprintf("Num array: %.10s", &mem[p+0x07]);
+                         sprintf("Num array: %.10s", &mem[p+0x08]);
                        break;
                        case 2:
-                         sprintf("Char array: %.10s", &mem[p+0x07]);
+                         sprintf("Char array: %.10s", &mem[p+0x08]);
                        break;
                        case 3:
-                         sprintf("Bytes: %.10s", &mem[p+0x07]);
+                         sprintf("Bytes: %.10s", &mem[p+0x08]);
                        break;
                        default:
-                         sprintf("Type %x: %.10s", mem[p+0x06], &mem[p+0x07]);
+                         sprintf("Type %x: %.10s", mem[p+0x07], &mem[p+0x08]);
                        break;
                      }
                    } else {
