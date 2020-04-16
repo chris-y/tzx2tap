@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
                    if(mem[p+0x04]==0) { //header
                          sprintf(buf, "%s: %.10s", type[mem[p+0x05]], &mem[p+0x06]);
                    } else {
-                     strcpy(buf, "Data: %ld bytes", len);
+                     sprintf(buf, "Data: %ld bytes", len);
                    }
                  }
                  pos+=len+0x04;
