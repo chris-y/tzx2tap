@@ -13,7 +13,7 @@ To install
 
 In c:/nextzxos/browser.cfg, add a new TZX line:
 
-    TZX<clear 65367:.tzx2tap "|":load "c:/nextzxos/tzxconv.bas":let f$="|":goto 9000
+    TZX<.tzx2tap -b "|":load "c:/nextzxos/tzxconv.bas":let f$="|":goto 9000
 
 Put this either before or after the existing line.  If it is before, you can convert TZX files by pressing Enter from the browser.  If it is after, you will need to press Symbol Shift+Enter to do the conversion.  The original TZX loader will be on the other combination.  It is recommended to put it before on a non-accelerated Next, and after on an accelerated Next.
 

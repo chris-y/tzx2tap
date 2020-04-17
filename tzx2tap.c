@@ -30,11 +30,22 @@ static uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
 static uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
 static uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
 
-// exits with an error message *errstr
 static void Error(int eno)
 {
   ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
   exit(eno);
+}
+
+// exits with an error message *errstr
+static void Err(char *errstr, bool browser)
+{
+  if(browser) {
+    printf("\x16\x15\x08\x14\x01\x13\x01%s", errstr);
+  } else {
+    printf("\nError: %s", errstr);
+  }
+
+  Error(0);
 }
 
 // Changes the File Extension of String *str to *ext
@@ -82,12 +93,7 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
   buf=(char *) malloc(1024);
 
   if(buf==NULL) {
-    if(browser) {
-      printf("\x16\x15\x09\x14\x01\x13\x01Out of mem", i);
-    } else {
-      printf("\nNot enough memory");
-    }
-    Error(0); //ERRB_4_OUT_OF_MEMORY
+    Err("Out of memory", browser); //ERRB_4_OUT_OF_MEMORY
   }
 
   esx_f_seek(fhi, posn, ESX_SEEK_SET);
@@ -111,7 +117,7 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
 
 int main(int argc, char *argv[])
 {
-  unsigned char fhi,fho;
+  unsigned char fhi,fho = 0;
   uint32_t flen;
   char *mem;
   char buf[256];
@@ -130,7 +136,7 @@ int main(int argc, char *argv[])
   int i;
   int converted = 0;
   char conv[3]={0x20, 0x2b, 0x2a};
-  char *type[4]={"Program", "Num array", "Char array", "Bytes"};
+  const char *type[4]={"Program", "Num array", "Char array", "Bytes"};
   char *src = NULL;
   char *dst = NULL;
 
@@ -172,7 +178,7 @@ int main(int argc, char *argv[])
 
   if((help==true) || (src==NULL) || ((list==true) && (dst!=NULL))) {
     printf("\nUsage:\n.TZX2TAP [OPTS] IN.TZX [OUT.TAP]\n");
-    printf("\nWhere OPTS are:\n");
+    printf("\nWhere OPTS is one of:\n");
     printf("  -h Show this help\n");
     printf("  -l List\n");
     printf("  -v Verbose\n");
@@ -200,18 +206,14 @@ int main(int argc, char *argv[])
   if(errno) 
     Error(errno);
 
-  if(list==false) {
+  if(!list) {
     errno = 0;
     fho = esx_f_open(buf, ESX_MODE_WRITE | ESX_MODE_OPEN_CREAT_NOEXIST);
 
     if(errno) {
       if(errno == ESX_EEXIST) {
-        if(browser) {
-          printf("\x16\x15\x09\x14\x01\x13\x01File exists", i);
-        } else {
-          printf("\nError: Output file exists\nProbably already converted!\n");
-        }
-        Error(0);
+        if(!browser) printf("\nFile already converted?");
+        Err("File exists", browser); //ERRB_4_OUT_OF_MEMORY
       } else {
         Error(errno);
       }
@@ -222,12 +224,7 @@ int main(int argc, char *argv[])
   mem=(char *) malloc(MAX_HEADER_SIZE);
 
   if(mem==NULL) {
-    if(browser) {
-      printf("\x16\x15\x09\x14\x01\x13\x01Out of mem", i);
-    } else {
-      printf("\nNot enough memory");
-    }
-    Error(0); //ERRB_4_OUT_OF_MEMORY
+    Err("Out of memory", browser); //ERRB_4_OUT_OF_MEMORY
   }
 
   esx_f_read(fhi,mem,10); mem[7]=0;
@@ -237,7 +234,7 @@ int main(int argc, char *argv[])
     Error(ESX_EWRTYPE); 
   }
 
-  printf("\nZXTape file revision %d.%02d\n",mem[8],mem[9]);
+  if(!browser) printf("\nZXTape file revision %d.%02d\n",mem[8],mem[9]);
 
   if(!mem[8]) {
     free(mem);
@@ -266,7 +263,6 @@ int main(int argc, char *argv[])
     start = read_file(fhi, mem, pos);
     pos++;
     p = pos - start;
-    blocks++;
 
     if(verbose) {
       printf("\n%02x", mem[p-1]);
@@ -280,7 +276,7 @@ int main(int argc, char *argv[])
     switch(mem[p-1])
       {
       case 0x10: len=Get2(&mem[p+0x02]);
-                 if(list==false) {
+                 if(!list) {
                    err = convert_data(fhi, fho, pos+0x02, 2);
                    if(err) {
                      free(mem);
@@ -305,7 +301,7 @@ int main(int argc, char *argv[])
                  break;
       case 0x11: len=Get3(&mem[p+0x0F]);
                  if(len<65536) {
-                   if(list==false) {
+                   if(!list) {
                      err = convert_data(fhi, fho, pos+0x0F, 2);
                      if(err) {
                        free(mem);
@@ -338,7 +334,7 @@ int main(int argc, char *argv[])
                  break;
       case 0x14: len=Get3(&mem[p+0x07]);
                  if(len<65536) {
-                   if(list==false) {
+                   if(!list) {
                      err = convert_data(fhi, fho, pos+0x07, 2);
                      if(err) {
                        free(mem);
@@ -462,7 +458,8 @@ int main(int argc, char *argv[])
           printf("0000 %s", buf);
         }
       } else if(browser) {
-        printf("\x16\x15\x08\x14\x01\x13\x01%c[%02x/%02x]", (custom|longer|dataonly) ? conv[2] : conv[0], block, blocks);
+        blocks++;
+        printf("\x16\x15\x08\x14\x01\x13\x01%c[%02lx/%02lx]", (custom|longer|dataonly) ? conv[2] : conv[0], block, blocks);
       }
     }
 
