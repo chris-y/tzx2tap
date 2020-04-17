@@ -24,6 +24,7 @@
 #define RTM_28MHZ 3 // from manual
 
 static unsigned char old_cpu_speed;
+static bool browser = false;
 
 static uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
 static uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
@@ -81,7 +82,11 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
   buf=(char *) malloc(1024);
 
   if(buf==NULL) {
-    printf("\nNot enough memory");
+    if(browser) {
+      printf("\x16\x15\x09\x14\x01\x13\x01Out of mem", i);
+    } else {
+      printf("\nNot enough memory");
+    }
     Error(0); //ERRB_4_OUT_OF_MEMORY
   }
 
@@ -112,7 +117,7 @@ int main(int argc, char *argv[])
   char buf[256];
   uint32_t pos, p, oldpos = 0;
   uint32_t len;
-  long block;
+  long block, blocks;
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
   bool verbose = false;
   bool help = false;
@@ -129,9 +134,6 @@ int main(int argc, char *argv[])
   char *src = NULL;
   char *dst = NULL;
 
-  printf("TZX2TAP for NextZXOS v%s\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n", PROGVER);
-//  printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
-
   if(argc>1) {
     for(i=1;i<argc;i++) {
       if(strcmp(argv[i], "-v") == 0) {
@@ -139,6 +141,8 @@ int main(int argc, char *argv[])
       } else if(strcmp(argv[i], "-l") == 0) {
         list = true;
         verbose = true; /* list implies verbose */
+      } else if(strcmp(argv[i], "-b") == 0) {
+        browser = true;
       } else if(strcmp(argv[i], "-h") == 0) {
         help = true;
       } else {
@@ -155,12 +159,24 @@ int main(int argc, char *argv[])
     help = true;
   }
 
+  if(browser && src) {
+    if(verbose || list) {
+      help = true;
+    } else {
+      printf("\x16\x15\x01\x08\x14\x01\x13\x01TZX2TAP                   ");
+    }
+  } else {
+    printf("TZX2TAP for NextZXOS v%s\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n", PROGVER);
+//  printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
+  }
+
   if((help==true) || (src==NULL) || ((list==true) && (dst!=NULL))) {
-    printf("\nUsage:\n.TZX2TAP [ARGS] IN.TZX [OUT.TAP]\n");
-    printf("\nWhere ARGS are:\n");
+    printf("\nUsage:\n.TZX2TAP [OPTS] IN.TZX [OUT.TAP]\n");
+    printf("\nWhere OPTS are:\n");
     printf("  -h Show this help\n");
     printf("  -l List\n");
     printf("  -v Verbose\n");
+    printf("  -b Browser mode\n");
     exit(0);
   }
 
@@ -190,7 +206,11 @@ int main(int argc, char *argv[])
 
     if(errno) {
       if(errno == ESX_EEXIST) {
-        printf("\nError: Output file exists\nProbably already converted!\n");
+        if(browser) {
+          printf("\x16\x15\x09\x14\x01\x13\x01File exists", i);
+        } else {
+          printf("\nError: Output file exists\nProbably already converted!\n");
+        }
         Error(0);
       } else {
         Error(errno);
@@ -202,7 +222,11 @@ int main(int argc, char *argv[])
   mem=(char *) malloc(MAX_HEADER_SIZE);
 
   if(mem==NULL) {
-    printf("\nNot enough memory");
+    if(browser) {
+      printf("\x16\x15\x09\x14\x01\x13\x01Out of mem", i);
+    } else {
+      printf("\nNot enough memory");
+    }
     Error(0); //ERRB_4_OUT_OF_MEMORY
   }
 
@@ -217,21 +241,22 @@ int main(int argc, char *argv[])
 
   if(!mem[8]) {
     free(mem);
-    printf("Error: TZX dev ver not supported\n");
+    if(!browser) printf("Error: TZX dev ver not supported\n");
     Error(ESX_EWRTYPE);
   }
 
   if(mem[8]>MAJREV) 
-    printf("\nWarning: Some blocks may not be recognised and used\n");
+    if(!browser) printf("\nWarning: Some blocks may not be recognised and used\n");
 
   if(mem[8]==MAJREV && mem[9]>MINREV) 
-    printf("\nWarning: Some of the data might not be properly recognised\n");
+    if(!browser) printf("\nWarning: Some of the data might not be properly recognised\n");
 
   pos = 10;
-  block=0;
+  block =0;
+  blocks=0;
   longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
 
-  if(list==false) printf("\nConverting...");
+  if((!list) && (!browser)) printf("\nConverting...");
 
   if(verbose) {
     printf("\nID Len  ");
@@ -241,13 +266,14 @@ int main(int argc, char *argv[])
     start = read_file(fhi, mem, pos);
     pos++;
     p = pos - start;
+    blocks++;
 
     if(verbose) {
       printf("\n%02x", mem[p-1]);
       oldpos = pos;
       strcpy(buf, "");
       converted = 0;
-    } else {
+    } else if(!browser) {
       printf(".");
     }
 
@@ -435,45 +461,48 @@ int main(int argc, char *argv[])
         } else {
           printf("0000 %s", buf);
         }
+      } else if(browser) {
+        printf("\x16\x15\x08\x14\x01\x13\x01%c[%02x/%02x]", (custom|longer|dataonly) ? conv[2] : conv[0], block, blocks);
       }
     }
 
-  printf("\n\n");
+  if(!browser) {
+    printf("\n\n");
 
-  if(list==false) {
+    if(!list) {
 
-    if(custom) 
-      printf("Warning: Custom Loading blocks  were converted\n\n");
+      if(custom) 
+        printf("Warning: Custom Loading blocks  were converted\n\n");
 
-    if(longer) 
-      printf("Warning: Over 64k long Custom   Loading blocks not converted\n\n");
+      if(longer) 
+        printf("Warning: Over 64k long Custom   Loading blocks not converted\n\n");
 
-    if(only) 
-      printf("Warning: Sequence of Pulses and/or Pure Tone blocks encountered\n\n");
+      if(only) 
+        printf("Warning: Sequence of Pulses and/or Pure Tone blocks encountered\n\n");
 
-    if(dataonly) 
-      printf("Warning: Data Only blocks were  converted\n\n");
+      if(dataonly) 
+        printf("Warning: Data Only blocks were  converted\n\n");
 
-    if(direct) 
-      printf("Warning: Direct Recording blockswere encountered\n\n");
+      if(direct) 
+        printf("Warning: Direct Recording blockswere encountered\n\n");
 
-    if(call_seq) 
-      printf("Warning: Call sequence blocks   were encountered\n\n");
+      if(call_seq) 
+        printf("Warning: Call sequence blocks   were encountered\n\n");
 
-    if(deprecated) 
-      printf("Warning: Deprecated blocks were encountered\n\n");
+      if(deprecated) 
+        printf("Warning: Deprecated blocks were encountered\n\n");
 
-    if(snap)
-      printf("Note: Embedded snapshot(s) not  extracted\n\n");
+      if(snap)
+        printf("Note: Embedded snapshot(s) not  extracted\n\n");
 
-    if(not_rec) 
-      printf("Warning: Some blocks were NOT   recognised\n\n");
-
-    printf("Converted %d blocks\n",block);
-
-    esx_f_close(fho);
+      if(not_rec) 
+        printf("Warning: Some blocks were NOT   recognised\n\n");
+  
+      printf("Converted %d blocks\n",block);
+    }
   }
 
+  if(!list) esx_f_close(fho);
   esx_f_close(fhi);
 
   free(mem);
