@@ -30,14 +30,8 @@ static uint32_t Get2(char *mem) { return(mem[0]+(mem[1]*256UL)); }
 static uint32_t Get3(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)); }
 static uint32_t Get4(char *mem) { return(mem[0]+(mem[1]*256UL)+(mem[2]*256UL*256UL)+(mem[3]*256UL*256UL*256UL)); }
 
-static void Error(int eno)
-{
-  ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
-  exit(eno);
-}
-
 // exits with an error message *errstr
-static void Err(char *errstr, bool browser)
+static int Err(char *errstr, bool browser)
 {
   if(browser) {
     printf("\x16\x15\x08\x14\x01\x13\x01%s", errstr);
@@ -45,7 +39,7 @@ static void Err(char *errstr, bool browser)
     printf("\nError: %s", errstr);
   }
 
-  Error(0);
+  return 0;
 }
 
 // Changes the File Extension of String *str to *ext
@@ -58,8 +52,8 @@ static void ChangeFileExtension(char *str,char *ext)
   while(str[n]!='.') 
     n--;
 
-  n++; 
-  str[n]=0; 
+  n++;
+  str[n]=0;
   strcat(str,ext);
 }
 
@@ -70,7 +64,7 @@ static uint32_t FileLength(unsigned char fh)
 
   errno = 0;
   if(esx_f_fstat(fh, (struct esx_stat *)&es)) {
-    Error(errno);
+    return 0;
   }
   return(es.size);
 }
@@ -94,6 +88,7 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
 
   if(buf==NULL) {
     Err("Out of memory", browser); //ERRB_4_OUT_OF_MEMORY
+    return -1;
   }
 
   esx_f_seek(fhi, posn, ESX_SEEK_SET);
@@ -119,11 +114,11 @@ int main(int argc, char *argv[])
 {
   unsigned char fhi,fho = 0;
   uint32_t flen;
-  char *mem;
+  char *mem = NULL;
   char buf[256];
-  uint32_t pos, p, oldpos = 0;
+  uint32_t pos = 10, p, oldpos = 0;
   uint32_t len;
-  long block, blocks;
+  long block = 0, blocks = 0;
   bool longer,custom,only,dataonly,direct,not_rec,snap,call_seq,deprecated;
   bool verbose = false;
   bool help = false;
@@ -172,7 +167,7 @@ int main(int argc, char *argv[])
       printf("\x16\x15\x01\x08\x14\x01\x13\x01TZX2TAP                   ");
     }
   } else {
-    printf("TZX2TAP for NextZXOS v%s\nby Chris Young 2020\ngithub.com/chris-y/tzx2tap\n", PROGVER);
+    printf("TZX2TAP v%s by Chris Young\ngithub.com/chris-y/tzx2tap\n", PROGVER);
 //  printf("Based on ZXTape Utilities\nTZX to TAP Converter v0.13b\n");
   }
 
@@ -183,7 +178,7 @@ int main(int argc, char *argv[])
     printf("  -l List\n");
     printf("  -v Verbose\n");
     printf("  -b Browser mode\n");
-    exit(0);
+    return 0;
   }
 
   if(dst==NULL) {
@@ -196,15 +191,19 @@ int main(int argc, char *argv[])
   old_cpu_speed = ZXN_READ_REG(REG_TURBO_MODE);
   ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
 
+/*
   if(list==false) {
     z80_bpoke(23692, 50);
   }
+*/
 
   errno = 0;
   fhi = esx_f_open(src, ESX_MODE_READ);
 
-  if(errno) 
-    Error(errno);
+  if(errno) {
+    err = errno;
+    goto end;
+  }
 
   if(!list) {
     errno = 0;
@@ -213,33 +212,41 @@ int main(int argc, char *argv[])
     if(errno) {
       if(errno == ESX_EEXIST) {
         if(!browser) printf("\nFile already converted?");
-        Err("File exists", browser); //ERRB_4_OUT_OF_MEMORY
+        err = Err("File exists", browser); //ERRB_4_OUT_OF_MEMORY
+        goto end;
       } else {
-        Error(errno);
+        err = errno;
+        goto end;
       }
     }
   }
 
   flen=FileLength(fhi);
+  if(flen==0) {
+    err=errno;
+    goto end;
+  }
+
   mem=(char *) malloc(MAX_HEADER_SIZE);
 
   if(mem==NULL) {
-    Err("Out of memory", browser); //ERRB_4_OUT_OF_MEMORY
+    err = Err("Out of memory", browser); //ERRB_4_OUT_OF_MEMORY
+    goto end;
   }
 
   esx_f_read(fhi,mem,10); mem[7]=0;
 
   if(strcmp(mem,"ZXTape!")) { 
-    free(mem);
-    Error(ESX_EWRTYPE); 
+    err = ESX_EWRTYPE;
+    goto end;
   }
 
   if(!browser) printf("\nZXTape file revision %d.%02d\n",mem[8],mem[9]);
 
   if(!mem[8]) {
-    free(mem);
     if(!browser) printf("Error: TZX dev ver not supported\n");
-    Error(ESX_EWRTYPE);
+    err = ESX_EWRTYPE;
+    goto end;
   }
 
   if(mem[8]>MAJREV) 
@@ -248,9 +255,6 @@ int main(int argc, char *argv[])
   if(mem[8]==MAJREV && mem[9]>MINREV) 
     if(!browser) printf("\nWarning: Some of the data might not be properly recognised\n");
 
-  pos = 10;
-  block =0;
-  blocks=0;
   longer=custom=only=dataonly=direct=not_rec=snap=call_seq=deprecated=false;
 
   if((!list) && (!browser)) printf("\nConverting...");
@@ -269,8 +273,6 @@ int main(int argc, char *argv[])
       oldpos = pos;
       strcpy(buf, "");
       converted = 0;
-    } else if(!browser) {
-      printf(".");
     }
 
     switch(mem[p-1])
@@ -279,13 +281,13 @@ int main(int argc, char *argv[])
                  if(!list) {
                    err = convert_data(fhi, fho, pos+0x02, 2);
                    if(err) {
-                     free(mem);
-                     Error(err);
+                     err=0;
+                     goto end;
                    }
                    err = convert_data(fhi, fho, pos+0x04, len);
                    if(err) {
-                     free(mem);
-                     Error(err);
+                     err=0;
+                     goto end;
                    }
                  }
                  if(verbose) {
@@ -304,13 +306,13 @@ int main(int argc, char *argv[])
                    if(!list) {
                      err = convert_data(fhi, fho, pos+0x0F, 2);
                      if(err) {
-                       free(mem);
-                       Error(err);
+                       err=0;
+                       goto end;
                      }
                      err = convert_data(fhi, fho, pos+0x12, len);
                      if(err) {
-                       free(mem);
-                       Error(err);
+                       err=0;
+                       goto end;
                      }
                    }
                    if(verbose) converted = 2;
@@ -337,13 +339,13 @@ int main(int argc, char *argv[])
                    if(!list) {
                      err = convert_data(fhi, fho, pos+0x07, 2);
                      if(err) {
-                       free(mem);
-                       Error(err);
+                       err=0;
+                       goto end;
                      }
                      err = convert_data(fhi, fho, pos+0x0A, len);
                      if(err) {
-                       free(mem);
-                       Error(err);
+                       err=0;
+                       goto end;
                      }
                    }
                    if(verbose) converted = 2;
@@ -450,6 +452,7 @@ int main(int argc, char *argv[])
                  if(verbose) strcpy(buf, "UNKNOWN");
       }
 
+      blocks++;
       if(verbose) {
           printf("%c", conv[converted]);
         if(pos > oldpos) {
@@ -458,8 +461,9 @@ int main(int argc, char *argv[])
           printf("0000 %s", buf);
         }
       } else if(browser) {
-        blocks++;
         printf("\x16\x15\x08\x14\x01\x13\x01%c[%02lx/%02lx]", (custom|longer|dataonly) ? conv[2] : conv[0], block, blocks);
+      } else {
+        printf(".");
       }
     }
 
@@ -495,17 +499,14 @@ int main(int argc, char *argv[])
       if(not_rec) 
         printf("Warning: Some blocks were NOT   recognised\n\n");
   
-      printf("Converted %d blocks\n",block);
+      if(!browser && !list) printf("Converted %ld blocks of %ld\n",block,blocks);
     }
   }
 
-  if(!list) esx_f_close(fho);
-  esx_f_close(fhi);
-
-  free(mem);
-
-  ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
-
-  return 0;
+  end:
+    if(fhi) esx_f_close(fhi);
+    if(fho) esx_f_close(fho);
+    if(mem) free(mem);
+    ZXN_NEXTREGA(REG_TURBO_MODE, old_cpu_speed);
+    return err;
 }
-
