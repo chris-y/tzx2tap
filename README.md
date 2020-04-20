@@ -35,23 +35,14 @@ This program supports v1.20 of the TZX specification.  Normal and custom loader 
 
 This prints more information whilst the file is being converted.
 
- `ID*SIZE DESC`
- 
- `ID` is the ID of the block.  This can be looked up in the TZX specification.
- 
- `*` indicates whether the block was converted:
- 
-   ` `: not converted
-   
-   `>`: not converted because longer than 64K (resulting TAP unlikely to work)
+| ID | * | SIZE | DESC |
+|----|---|------|------|
+|ID of the block from the TZX specification    |indicates whether the block was converted   |size of the block (including headers)      | description of the block or some info extracted from the header      |
+|    |` `: not converted   |      |      |
+|    |`>`: not converted because longer than 64K (resulting TAP unlikely to work)   |      |      |
+|    |`*`: converted but will probably still need a Pi to load on a Next   |      |      |
+|    |`+`: converted ok    |      |      |
 
-   `*`: converted but will probably still need a Pi to load on a Next
-   
-   `+`: converted ok
-   
- `SIZE` is the size of the block (including headers)
- 
- `DESC` is a description of the block or some info extracted from the header
 
 `-l` List
 
