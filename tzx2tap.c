@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
   int err = 0;
   int i;
   int converted = 0;
-  char conv[3]={0x20, 0x2b, 0x2a};
+  char conv[4]={0x20, 0x2b, 0x2a, 0x3e};
   const char *type[4]={"Program", "Num array", "Char array", "Bytes"};
   char *src = NULL;
   char *dst = NULL;
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
                  }
                  else {
                    longer=true;
-                   if(verbose) converted = 0;
+                   if(verbose) converted = 3;
                  }
                  custom=true;
                  pos+=len+0x12;
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
                  }
                  else {
                    longer=true;
-                   if(verbose) converted = 0;
+                   if(verbose) converted = 3;
                  }
                  dataonly=true;
                  pos+=len+0x0A;
