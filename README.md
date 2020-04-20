@@ -24,3 +24,31 @@ The resulting TAP (named the same but with a .tap extension) will remain availab
 This allows you to easily open TZX files on an unexpanded Spectrum Next, provided no custom loader is present in the file.
 
 This program supports v1.20 of the TZX specification.  Normal and custom loader blocks below 64K are converted.  Most other blocks are skipped over (loops are supported as they were trivial to add).
+
+**Full usage**
+
+`.TZX2TAP [-l|-v|-b] IN.TZX [OUT.TAP]`
+
+`.TZX2TAP` with no options will convert IN.TZX to OUT.TAP.  Without the output filename, the resulting file will be named IN.TAP.
+
+`-v` Verbose mode
+
+This prints more information whilst the file is being converted.
+
+ ID*SIZE DESC
+ ID is the ID of the block.  This can be looked up in the TZX specification.
+ * indicates whether the block was converted:
+   blank: not converted
+   > : not converted because longer than 64K
+   * : converted but will probably still need a Pi to load on a Next
+   + : converted ok
+ SIZE is the size of the block (including headers)
+ DESC is a description of the block or some info extracted from the header
+
+`-l` List
+
+Same as -v but only lists the blocks does not do any conversion.  The flags are shown so it is possible to tell whether the file would be converted as expected.
+
+`-b` Browser mode
+
+Only for use in browser.cfg.  Shows the conversion on the ZX bar, with the number of blocks converted and number of blocks processed.  A * in front of this number indicates that the file probably won't load on the Next without a Pi and/or blocks longer than 64K were encountered.
