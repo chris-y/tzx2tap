@@ -191,11 +191,9 @@ int main(int argc, char *argv[])
   old_cpu_speed = ZXN_READ_REG(REG_TURBO_MODE);
   ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
 
-/*
   if(list==false) {
     z80_bpoke(23692, 50);
   }
-*/
 
   errno = 0;
   fhi = esx_f_open(src, ESX_MODE_READ);
