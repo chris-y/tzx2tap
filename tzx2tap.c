@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
                  if(verbose) sprintf(buf, "Message: %.*s", mem[p+0x01]>15 ? 15 : mem[p+0x01], &mem[p+0x02]);
                  break;
       case 0x32: pos+=Get2(&mem[p+0x00])+0x02;
-                 if(verbose) strcpy(buf, "Archive info");
+                 if(verbose) sprintf(buf, "Arc info %02x=%.*s", mem[p+0x03], mem[p+0x04]>12 ? 12 : mem[p+0x04], &mem[p+0x05]);
                  break;
       case 0x33: pos+=(mem[p+0x00]*0x03)+0x01;
                  if(verbose) strcpy(buf, "Hardware type");
