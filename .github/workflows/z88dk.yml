@@ -26,11 +26,11 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: zmakebas
-      - name: ls
-        run: ls -la
       - name: build
         id: build
-        run: make -f Makefile
+        run: |
+          chmod a+x ./zmakebas/zmakebas
+          make -f Makefile
       - uses: actions/upload-artifact@v1
         with:
           name: TZX2TAP
