@@ -9,9 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: z88dk/z88dk:latest
-#      options: -v ${PWD}:/src
     name: build
     steps:
+      - uses: actions/checkout@v2
+        with:
+          name: chris-y/zmakebas
+          ref: v1.5.2
+      - name: build_zmakebas
+        id: build_zmakebas
+        run: ls -la
+        #make -f Makefile zmakebas
       - uses: actions/checkout@v2
       - name: build
         id: build
