@@ -13,8 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          name: chris-y/zmakebas
-          ref: v1.5.2
+          repository: chris-y/zmakebas
       - name: build_zmakebas
         id: build_zmakebas
         run: ls -la
