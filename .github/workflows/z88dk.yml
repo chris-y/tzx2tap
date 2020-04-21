@@ -16,9 +16,18 @@ jobs:
           repository: chris-y/zmakebas
       - name: build_zmakebas
         id: build_zmakebas
-        run: ls -la
-        #make -f Makefile zmakebas
+        run: make -f Makefile zmakebas
+      - uses: actions/upload-artifact@v1
+        with:
+          name: zmakebas
+          path: ./zmakebas
       - uses: actions/checkout@v2
+      - name: Download zmakebas
+        uses: actions/download-artifact@v1
+        with:
+          name: zmakebas
+      - name: ls
+        run: ls -la
       - name: build
         id: build
         run: make -f Makefile
