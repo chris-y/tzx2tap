@@ -1,0 +1,16 @@
+9000 PRINT #1; AT 0,0;"Load tape now? (Y/N)"
+9020 LET i$= INKEY$ 
+9030 IF i$="y" OR i$="Y" THEN GOTO 9100
+9040 IF i$="n" OR i$="N" THEN GOTO 9999 
+9050 GOTO 9020
+9100 PRINT #1; AT 0,0;"Please wait...      "
+9110 LET %s=% REG 7&3
+9120 RUN AT 3
+9130 LET f$=f$( TO LEN (f$)-3)+"tap"
+9140 LET q$=""""+f$+""""
+9150 .$ tapein q$
+9160 REM CLEAR 65367
+9170 MERGE "c:/nextzxos/tapload.bas"
+9180 RUN AT %s
+9190 GOTO 10
+9990 SAVE "c:/nextzxos/tzxconv.bas"
