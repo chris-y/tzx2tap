@@ -8,7 +8,7 @@
 9120 RUN AT 3
 9130 LET f$=f$( TO LEN (f$)-3)+"tap"
 9140 LET q$=""""+f$+""""
-9150 .$ tapein q$
+9150 .$\{0x20}tapein\{0x20}q$
 9160 REM CLEAR 65367
 9170 MERGE "c:/nextzxos/tapload.bas"
 9180 RUN AT %s
