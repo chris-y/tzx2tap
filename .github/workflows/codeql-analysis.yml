@@ -18,8 +18,8 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    container:
-      image: z88dk/z88dk:latest
+    #container:
+    #  image: z88dk/z88dk:latest
 
     strategy:
       fail-fast: false
@@ -65,8 +65,8 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
 
-    - run: |
-       make tzx2tap
+    #- run: |
+    #   make tzx2tap
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
