@@ -18,7 +18,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-      container:
+    container:
       image: z88dk/z88dk:latest
 
     strategy:
