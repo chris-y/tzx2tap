@@ -11,6 +11,7 @@
 9150 .$\{0x20}tapein\{0x20}q$
 9160 REM CLEAR 65367
 9170 MERGE "c:/nextzxos/tapload.bas"
+9175 LET adj=0
 9180 RUN AT %s
-9190 GOTO 10
+9190 GOTO 1
 9990 SAVE "c:/nextzxos/tzxconv.bas"
