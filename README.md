@@ -21,7 +21,7 @@ In c:/nextzxos/enBrowsext.cfg, add the following:
 
     tZX2TAP:f.tzx:<cls:.tzx2tap -v "|":pause 0
 
-Selecting a TZX file in the browser will convert the file, and then ask if you want to load it (similar to how the disk mounter works in release 1.3 of NextZXOS).  This allows you to easily open TZX files on an unexpanded Spectrum Next, provided no custom loader is present in the file.  If no warnings are displayed it is highly likely the file will open fine on a basic Next.  Note that with the latest pre-release of NextZXOS a warning will be displayed about saving options to the file if the TAP is loaded by presing "Y" at the prompt.
+Selecting a TZX file in the browser will convert the file, and then ask if you want to load it (similar to how the disk mounter works in release 1.3 of NextZXOS).  This allows you to easily open TZX files on an unexpanded Spectrum Next, provided no custom loader is present in the file.  If no warnings are displayed it is highly likely the file will open fine on a basic Next.
 
 The resulting TAP (named the same but with a .tap extension) will remain available to open as usual afterwards.  If the file already exists it will print an error but will return OK as it assumes the file has already been converted.
 
