@@ -8,8 +8,8 @@ TZX to TAP file conversion for the ZX Spectrum Next (NextZXOS) as a dot command.
 Based on ZXTape Utilities TZX to TAP Converter v0.13b by Tomaz Kac.
 
 To install
-  - copy TZX2TAP to c:/dot
-  - copy tzxconv.bas to c:/nextzxos
+- copy TZX2TAP to c:/dot
+- copy tzxconv.bas to c:/nextzxos
 
 In c:/nextzxos/browser.cfg, add a new TZX line:
 
