@@ -82,7 +82,7 @@ static int convert_data(unsigned char fhi, unsigned char fho, uint32_t posn, uin
 {
   char *buf;
   uint32_t bytes_read = 0;
-  uint32_t bytes_to_read = 0;
+  uint32_t bytes_to_read;
 
   buf=(char *) malloc(1024);
 
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
                    if(mem[p+0x04]==0) { //header
                          sprintf(buf, "%s: %.10s", type[mem[p+0x05]], &mem[p+0x06]);
                    } else {
-                     sprintf(buf, "Data: %ld bytes", len);
+                     sprintf(buf, "Data: %u bytes", len);
                    }
                  }
                  pos+=len+0x04;
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
                  if(verbose) sprintf(buf, "%s", mem[p-1]==0x18 ? "CSW recording" : "General data");
                  break;
       case 0x20: pos+=0x02;
-                 if(verbose) sprintf(buf, "Pause for %ldms", Get2(&mem[p+0x00]));
+                 if(verbose) sprintf(buf, "Pause for %ums", Get2(&mem[p+0x00]));
                  break;
       case 0x21: pos+=mem[p+0x00]+0x01;
                  if(verbose) sprintf(buf, "Group: %.*s", mem[p+0x00]>17 ? 17 : mem[p+0x00], &mem[p+0x01]);
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
       case 0x22: if(verbose) strcpy(buf, "Group end");
                  break;
       case 0x23: pos+=0x02;
-                 if(verbose) sprintf(buf, "Jump %ld blocks", Get2(&mem[p+0x00]));
+                 if(verbose) sprintf(buf, "Jump %u blocks", Get2(&mem[p+0x00]));
                  break;
       case 0x24: pos+=0x02;
                  if(list==false) {
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
                  }
                  if(verbose) {
                    converted = 1;
-                   sprintf(buf, "Loop start, count=%ld", loop_count);
+                   sprintf(buf, "Loop start, count=%u", loop_count);
                  }
                  break;
       case 0x25: if(list==false) {
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
                  }
                  if(verbose) {
                    converted = 1;
-                   sprintf(buf, "Loop end, count=%ld", loop_count);
+                   sprintf(buf, "Loop end, count=%u", loop_count);
                  }
                  break;
       case 0x26: pos += (Get2(&mem[p+0x00])*2)+0x02;
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
                  if(verbose) strcpy(buf, "Call sequence return");
                  break;
       case 0x28: pos += Get2(&mem[p+0x00])+0x02;
-                 if(verbose) sprintf(buf, "Select, items=%ld", mem[p+0x02]);
+                 if(verbose) sprintf(buf, "Select, items=%d", mem[p+0x02]);
                  break;
       case 0x2A: pos+=Get4(&mem[p+0x00]+0x04);
                  if(verbose) strcpy(buf, "Stop tape in 48K mode");
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
       if(verbose) {
           printf("%c", conv[converted]);
         if(pos > oldpos) {
-          printf("%04lx %s", pos - oldpos, buf);
+          printf("%04x %s", pos - oldpos, buf);
         } else {
           printf("0000 %s", buf);
         }
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
       if(not_rec) 
         printf("Warning: Some blocks were NOT   recognised\n\n");
   
-      if(!browser && !list) printf("Converted %ld blocks of %ld\n",block,blocks);
+      printf("Converted %ld blocks of %ld\n",block,blocks);
     }
   }
 
